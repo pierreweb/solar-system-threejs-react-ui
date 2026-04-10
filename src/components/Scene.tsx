@@ -8,6 +8,7 @@ import React, {
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars, useTexture } from "@react-three/drei";
 import * as THREE from "three";
+// import { solarObjects } from "../../config/solarObjects.js";
 import { simulationBodyConfigs } from "../../config/simulationBodyConfigs.js";
 import {
   LIGHT_PRESETS,
@@ -152,7 +153,7 @@ function scaleEphemerisPositionLog(
 }
 
 function getEphemerisOrbitalAngle(x: number, z: number) {
-  return Math.atan2(-z, -x);
+  return Math.atan2(z, x);
 }
 
 /* function projectEphemerisToScenePlane(
@@ -826,7 +827,7 @@ export const Scene: React.FC<SceneProps> = ({
       .map((obj) => createPlanetDescriptor(obj)) as PlanetRenderModel[];
 
     const rings = simulationBodyConfigs
-      .filter((obj) => obj.kind === "planet" && obj.rings?.enabled)
+      .filter((obj) => obj.kind === "ring")
       .map((obj) => createRingDescriptor(obj)) as RingRenderModel[];
 
     const belt = simulationBodyConfigs
@@ -841,16 +842,11 @@ export const Scene: React.FC<SceneProps> = ({
     });
 
     const moonByParent = new Map<string, MoonRenderModel>();
-    const moonConfig = simulationBodyConfigs.find(
-      (obj) =>
-        obj.kind === "satellite" &&
-        obj.parentName === "Earth" &&
-        obj.name === "Moon",
-    );
-    if (moonConfig) {
+    const earth = planets.find((planet) => planet.name === "Earth");
+    if (earth) {
       moonByParent.set(
         "Earth",
-        createEarthMoonDescriptor(planets.find((planet) => planet.name === "Earth")) as MoonRenderModel,
+        createEarthMoonDescriptor(earth) as MoonRenderModel,
       );
     }
 
