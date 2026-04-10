@@ -19,6 +19,7 @@ import { createBeltDescriptor } from "../../objects/beltFactory.js";
 import { createEarthMoonDescriptor } from "../../objects/moonFactory.js";
 import { createPlanetDescriptor } from "../../objects/planetFactory.js";
 import { createRingDescriptor } from "../../objects/ringFactory.js";
+import { createSunRenderModel } from "../../objects/sunFactory.js";
 import { resolveAssetUrl } from "../../objects/sceneObjectUtils.js";
 import type {
   BodyEphemeris,
@@ -82,9 +83,17 @@ interface BeltRenderModel {
   orbitSpeed: number;
 }
 
+interface SunRenderModel {
+  name: string;
+  textureUrl?: string | null;
+  radiusScaled: number;
+  haloRadiusScaled: number;
+  labelOffsetY: number;
+  rotationSpeed: number;
+  color: number;
+}
+
 const ORBIT_SEGMENTS = 128;
-const SUN_RADIUS = 1.95;
-const SUN_ROTATION_SPEED = 0.12;
 const SELF_ROTATION_VISUAL_SCALE = 6;
 const ASTEROID_BELT_AU_RANGE = {
   inner: 2.2,
@@ -260,6 +269,78 @@ function CameraSetup() {
   }, [camera]);
 
   return null;
+}
+
+function SunNode({
+  sun,
+  language,
+  showLabels,
+  isDark,
+  animationSpeed,
+  isPaused,
+  onSelect,
+}: {
+  sun: SunRenderModel;
+  language: "EN" | "FR";
+  showLabels: boolean;
+  isDark: boolean;
+  animationSpeed: number;
+  isPaused: boolean;
+  onSelect: (name: string) => void;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  const texture = useTexture(
+    sun.textureUrl || resolveAssetUrl("./textures/2k_sun.jpg"),
+  ) as THREE.Texture;
+
+  useFrame((_, delta) => {
+    if (isPaused || !meshRef.current) return;
+    meshRef.current.rotation.y += delta * animationSpeed * sun.rotationSpeed;
+  });
+
+  return (
+    <>
+      <mesh
+        ref={meshRef}
+        scale={hovered ? 1.04 : 1}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect(sun.name);
+        }}
+        onPointerOver={() => {
+          setHovered(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          document.body.style.cursor = "auto";
+        }}
+      >
+        <sphereGeometry args={[sun.radiusScaled, 48, 48]} />
+        <meshBasicMaterial map={texture} color="#ffffff" />
+      </mesh>
+
+      <mesh>
+        <sphereGeometry args={[sun.haloRadiusScaled, 32, 32]} />
+        <meshBasicMaterial
+          color={sun.color}
+          transparent
+          opacity={isDark ? 0.08 : 0.04}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {showLabels && (
+        <SolarLabel
+          text={getSceneLabel(sun.name, language)}
+          isDark={isDark}
+          position={[0, sun.labelOffsetY, 0]}
+          distanceFactor={16}
+        />
+      )}
+    </>
+  );
 }
 
 function MoonNode({
@@ -809,19 +890,22 @@ export const Scene: React.FC<SceneProps> = ({
   backgroundOpacity,
   lightPreset,
 }) => {
-  const sunRef = useRef<THREE.Mesh>(null);
   const axisHelper = useMemo(() => new THREE.AxesHelper(5), []);
-  const [sunHovered, setSunHovered] = useState(false);
-
-  const sunTexture = useTexture(
-    resolveAssetUrl("./textures/2k_sun.jpg"),
-  ) as THREE.Texture;
 
   const backgroundTexture = useTexture(
     backgroundUrl || resolveAssetUrl("./textures/sky/2k_stars.jpg"),
   ) as THREE.Texture;
   const activeLightPreset = LIGHT_PRESETS[lightPreset] ?? LIGHT_PRESETS.normal;
   const sceneModel = useMemo(() => {
+    const sun = createSunRenderModel(
+      simulationBodyConfigs.find((obj) => obj.kind === "star") ?? {
+        name: "Sun",
+        texture: "./textures/2k_sun.jpg",
+        radius: 12.1875,
+        color: 0xffcc66,
+        rotationSpeed: 0.12,
+      },
+    ) as SunRenderModel;
     const planets = simulationBodyConfigs
       .filter((obj) => obj.kind === "planet" || obj.kind === "dwarf")
       .map((obj) => createPlanetDescriptor(obj)) as PlanetRenderModel[];
@@ -850,7 +934,7 @@ export const Scene: React.FC<SceneProps> = ({
       );
     }
 
-    return { planets, belt, ringByParent, moonByParent };
+    return { sun, planets, belt, ringByParent, moonByParent };
   }, []);
   const projectedAsteroidBeltRadii = useMemo(() => {
     return {
@@ -952,11 +1036,6 @@ export const Scene: React.FC<SceneProps> = ({
     };
   }, []);
 
-  useFrame((_, delta) => {
-    if (isPaused || !sunRef.current) return;
-    sunRef.current.rotation.y += delta * animationSpeed * SUN_ROTATION_SPEED;
-  });
-
   return (
     <>
       <CameraSetup />
@@ -1017,44 +1096,15 @@ export const Scene: React.FC<SceneProps> = ({
         color="#ffffff"
       />
 
-      <mesh
-        ref={sunRef}
-        scale={sunHovered ? 1.04 : 1}
-        onClick={(event) => {
-          event.stopPropagation();
-          onPlanetSelect("Sun");
-        }}
-        onPointerOver={() => {
-          setSunHovered(true);
-          document.body.style.cursor = "pointer";
-        }}
-        onPointerOut={() => {
-          setSunHovered(false);
-          document.body.style.cursor = "auto";
-        }}
-      >
-        <sphereGeometry args={[SUN_RADIUS, 48, 48]} />
-        <meshBasicMaterial map={sunTexture} color="#ffffff" />
-      </mesh>
-
-      <mesh>
-        <sphereGeometry args={[SUN_RADIUS * 1.18, 32, 32]} />
-        <meshBasicMaterial
-          color="#ffcc66"
-          transparent
-          opacity={isDark ? 0.08 : 0.04}
-          depthWrite={false}
-        />
-      </mesh>
-
-      {showLabels && (
-        <SolarLabel
-          text={getSceneLabel("Sun", language)}
-          isDark={isDark}
-          position={[0, SUN_RADIUS + 0.8, 0]}
-          distanceFactor={16}
-        />
-      )}
+      <SunNode
+        sun={sceneModel.sun}
+        language={language}
+        showLabels={showLabels}
+        isDark={isDark}
+        animationSpeed={animationSpeed}
+        isPaused={isPaused}
+        onSelect={onPlanetSelect}
+      />
 
       {sceneModel.belt && (
         <AsteroidBeltNode

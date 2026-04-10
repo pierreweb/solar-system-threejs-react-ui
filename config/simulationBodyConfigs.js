@@ -2,6 +2,27 @@
 // (`distance`, `radius`) with reference astronomy values for a later migration.
 export const simulationBodyConfigs = [
   {
+    name: "Sun",
+    kind: "star",
+    visualRole: "sun",
+
+    orbitalDistanceAu: 0,
+    physicalRadiusKm: 696340,
+
+    distance: 0,
+    radius: 12.1875,
+    rotationSpeed: 0.12,
+
+    dayHours: 609.12,
+    tiltDeg: 7.25,
+
+    texture: "./textures/2k_sun.jpg",
+    color: 0xffcc66,
+
+    hasOrbitRing: false,
+    hasLabel: true,
+  },
+  {
     name: "Mercury",
     kind: "planet",
     visualRole: "planet",
