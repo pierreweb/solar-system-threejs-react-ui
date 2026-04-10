@@ -1,0 +1,1128 @@
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, Stars, useTexture } from "@react-three/drei";
+import * as THREE from "three";
+import { simulationBodyConfigs } from "../../config/simulationBodyConfigs.js";
+import {
+  LIGHT_PRESETS,
+  MOON_ORBIT_DAYS,
+  MOON_ROTATION_DAYS,
+} from "../../config/constants.js";
+import { createBeltDescriptor } from "../../objects/beltFactory.js";
+import { createEarthMoonDescriptor } from "../../objects/moonFactory.js";
+import { createPlanetDescriptor } from "../../objects/planetFactory.js";
+import { createRingDescriptor } from "../../objects/ringFactory.js";
+import { resolveAssetUrl } from "../../objects/sceneObjectUtils.js";
+import type {
+  BodyEphemeris,
+  SupportedEphemerisBodyName,
+} from "../services/ephemerisService";
+import { SolarLabel } from "./SolarLabel";
+
+interface SceneProps {
+  onPlanetSelect: (planetName: string) => void;
+  ephemerides?: Partial<Record<SupportedEphemerisBodyName, BodyEphemeris>>;
+  elapsedSimDays: number;
+  language: "EN" | "FR";
+  showLabels: boolean;
+  showOrbits: boolean;
+  showAxis: boolean;
+  animationSpeed: number;
+  isPaused: boolean;
+  isDark: boolean;
+  backgroundUrl: string;
+  backgroundOpacity: number;
+  lightPreset: "normal" | "cinematic" | "boost";
+}
+
+interface PlanetRenderModel {
+  name: string;
+  color: number;
+  orbitRadius: number;
+  radiusScaled: number;
+  yearDays?: number;
+  orbitSpeed: number;
+  selfRotationSpeed: number;
+  tiltRad: number;
+  textureUrl?: string | null;
+}
+
+interface RingRenderModel {
+  parentName: string;
+  textureUrl?: string | null;
+  innerRadiusScaled: number;
+  outerRadiusScaled: number;
+  color?: number;
+}
+
+interface MoonRenderModel {
+  name: string;
+  orbitRadius: number;
+  radiusScaled: number;
+  orbitSpeed: number;
+  selfRotationSpeed: number;
+  textureUrl?: string | null;
+  color: number;
+}
+
+interface BeltRenderModel {
+  name: string;
+  color: number;
+  count: number;
+  thickness: number;
+  innerRadiusScaled: number;
+  outerRadiusScaled: number;
+  orbitSpeed: number;
+}
+
+const ORBIT_SEGMENTS = 128;
+const SUN_RADIUS = 1.95;
+const SUN_ROTATION_SPEED = 0.12;
+const SELF_ROTATION_VISUAL_SCALE = 6;
+const ASTEROID_BELT_AU_RANGE = {
+  inner: 2.2,
+  outer: 3.2,
+} as const;
+const EPHEMERIS_LOG_SCALE_OPTIONS = {
+  minRadius: 5,
+  logStretch: 4,
+  distanceScale: 3,
+} as const;
+const SUPPORTED_EPHEMERIS_PLANET_NAMES: SupportedEphemerisBodyName[] = [
+  "Mercury",
+  "Venus",
+  "Earth",
+  "Moon",
+  "Mars",
+  "Ceres",
+  "Jupiter",
+  "Saturn",
+  "Uranus",
+  "Neptune",
+  "Pluto",
+];
+
+const localizedSceneLabels: Record<string, { EN: string; FR: string }> = {
+  Sun: { EN: "Sun", FR: "Soleil" },
+  Mercury: { EN: "Mercury", FR: "Mercure" },
+  Venus: { EN: "Venus", FR: "Vénus" },
+  Earth: { EN: "Earth", FR: "Terre" },
+  Moon: { EN: "Moon", FR: "Lune" },
+  Mars: { EN: "Mars", FR: "Mars" },
+  "Asteroid Belt": { EN: "Asteroid Belt", FR: "Ceinture d’astéroïdes" },
+  Ceres: { EN: "Ceres", FR: "Cérès" },
+  Jupiter: { EN: "Jupiter", FR: "Jupiter" },
+  Saturn: { EN: "Saturn", FR: "Saturne" },
+  Uranus: { EN: "Uranus", FR: "Uranus" },
+  Neptune: { EN: "Neptune", FR: "Neptune" },
+  Pluto: { EN: "Pluto", FR: "Pluton" },
+};
+
+const getSceneLabel = (name: string, language: "EN" | "FR") =>
+  (localizedSceneLabels[name]?.[language] ?? name).toUpperCase();
+
+function scaleEphemerisPositionLog(
+  x: number,
+  y: number,
+  z: number,
+  options: {
+    minRadius?: number;
+    logStretch?: number;
+    distanceScale?: number;
+  } = {},
+) {
+  const { minRadius = 5, logStretch = 4, distanceScale = 3 } = options;
+  const radius = Math.sqrt(x * x + y * y + z * z);
+
+  if (!Number.isFinite(radius) || radius <= 0) {
+    return new THREE.Vector3(0, 0, 0);
+  }
+
+  const scaledRadius =
+    minRadius + Math.log1p(radius * logStretch) * distanceScale;
+  const direction = new THREE.Vector3(x, y, z).normalize();
+
+  return direction.multiplyScalar(scaledRadius);
+}
+
+function getEphemerisOrbitalAngle(x: number, z: number) {
+  return Math.atan2(-z, -x);
+}
+
+/* function projectEphemerisToScenePlane(
+  x: number,
+  y: number,
+  z: number,
+  options: Parameters<typeof scaleEphemerisPositionLog>[3] = {},
+) {
+  const scaledVector = scaleEphemerisPositionLog(x, y, z, options);
+  const scaledRadius = scaledVector.length();
+  const orbitalAngle = getEphemerisOrbitalAngle(x, z);
+
+  return {
+    orbitalAngle,
+    scaledRadius,
+    position: new THREE.Vector3(
+      Math.cos(orbitalAngle) * scaledRadius,
+      0,
+      -Math.sin(orbitalAngle) * scaledRadius,
+    ),
+  };
+} */
+function projectEphemerisToScenePlane(
+  x: number,
+  y: number,
+  z: number,
+  options: Parameters<typeof scaleEphemerisPositionLog>[3] = {},
+) {
+  const scaled = scaleEphemerisPositionLog(x, y, z, options);
+
+  const sceneX = scaled.x;
+  const sceneZ = scaled.z; // test le signe ici
+
+  return {
+    orbitalAngle: Math.atan2(sceneZ, sceneX),
+    scaledRadius: Math.hypot(sceneX, sceneZ),
+    position: new THREE.Vector3(sceneX, 0, sceneZ),
+  };
+}
+
+function projectHeliocentricDistanceToSceneRadius(
+  distanceAu: number,
+  options: Parameters<typeof scaleEphemerisPositionLog>[3] = {},
+) {
+  return scaleEphemerisPositionLog(distanceAu, 0, 0, options).length();
+}
+
+function getOrbitalAngleOffset(
+  elapsedSimDays: number,
+  orbitalPeriodDays: number,
+) {
+  if (!Number.isFinite(orbitalPeriodDays) || orbitalPeriodDays === 0) {
+    return 0;
+  }
+
+  return (Math.PI * 2 * elapsedSimDays) / orbitalPeriodDays;
+}
+
+function getProjectedOrbitPosition(
+  baseAngle: number,
+  scaledRadius: number,
+  elapsedSimDays: number,
+  orbitalPeriodDays: number,
+) {
+  const finalAngle =
+    baseAngle - getOrbitalAngleOffset(elapsedSimDays, orbitalPeriodDays);
+
+  return new THREE.Vector3(
+    Math.cos(finalAngle) * scaledRadius,
+    0,
+    -Math.sin(finalAngle) * scaledRadius,
+  );
+}
+
+function getRotationPeriodDaysFromSpeed(selfRotationSpeed: number) {
+  if (!Number.isFinite(selfRotationSpeed) || selfRotationSpeed === 0) {
+    return null;
+  }
+
+  const periodHours = (Math.PI * 2) / Math.abs(selfRotationSpeed);
+  return periodHours / 24;
+}
+
+function getSelfRotationAngleFromElapsedSimDays(
+  elapsedSimDays: number,
+  selfRotationSpeed: number,
+) {
+  const rotationPeriodDays = getRotationPeriodDaysFromSpeed(selfRotationSpeed);
+
+  if (!rotationPeriodDays) {
+    return null;
+  }
+
+  const direction = selfRotationSpeed < 0 ? -1 : 1;
+  return direction * ((Math.PI * 2 * elapsedSimDays) / rotationPeriodDays);
+}
+
+function CameraSetup() {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    camera.position.set(0, 10, 34);
+    camera.lookAt(0, 0, 0);
+  }, [camera]);
+
+  return null;
+}
+
+function MoonNode({
+  moon,
+  language,
+  elapsedSimDays,
+  showLabels,
+  showAxis,
+  animationSpeed,
+  isPaused,
+  isDark,
+  lightPresetConfig,
+  ephemerisPosition,
+  ephemerisOrbit,
+  onSelect,
+}: {
+  moon: MoonRenderModel;
+  language: "EN" | "FR";
+  elapsedSimDays: number;
+  showLabels: boolean;
+  showAxis: boolean;
+  animationSpeed: number;
+  isPaused: boolean;
+  isDark: boolean;
+  lightPresetConfig: (typeof LIGHT_PRESETS)["normal"];
+  ephemerisPosition?: THREE.Vector3;
+  ephemerisOrbit?: { baseAngle: number; scaledRadius: number };
+  onSelect: (name: string) => void;
+}) {
+  const orbitRef = useRef<THREE.Group>(null);
+  const moonPositionRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  const animatedAngleOffsetRef = useRef(0);
+
+  const axisHelper = useMemo(
+    () => new THREE.AxesHelper(Math.max(moon.radiusScaled * 4, 0.6)),
+    [moon.radiusScaled],
+  );
+
+  const texture = useTexture(
+    moon.textureUrl || resolveAssetUrl("./textures/2k_moon.jpg"),
+  ) as THREE.Texture;
+  const moonPosition = ephemerisOrbit
+    ? getProjectedOrbitPosition(
+        ephemerisOrbit.baseAngle,
+        ephemerisOrbit.scaledRadius,
+        elapsedSimDays,
+        MOON_ORBIT_DAYS,
+      )
+    : (ephemerisPosition ?? new THREE.Vector3(moon.orbitRadius, 0, 0));
+
+  /*   useFrame((_, delta) => {
+    if (!isPaused) {
+      if (orbitRef.current && !ephemerisOrbit) {
+        orbitRef.current.rotation.y +=
+          delta * animationSpeed * moon.orbitSpeed * 0.1;
+      }
+
+      if (ephemerisOrbit) {
+        animatedAngleOffsetRef.current +=
+          delta * animationSpeed * moon.orbitSpeed * 0.1;
+      }
+    }
+
+    if (meshRef.current) {
+      meshRef.current.rotation.y +=
+        delta * moon.selfRotationSpeed * SELF_ROTATION_VISUAL_SCALE;
+    }
+
+    if (moonPositionRef.current && ephemerisOrbit) {
+      const angle = ephemerisOrbit.baseAngle - animatedAngleOffsetRef.current;
+      moonPositionRef.current.position.set(
+        Math.cos(angle) * ephemerisOrbit.scaledRadius,
+        0,
+        Math.sin(angle) * ephemerisOrbit.scaledRadius,
+      );
+    }
+  }); */
+  useFrame((_, delta) => {
+    if (!isPaused) {
+      if (orbitRef.current && !ephemerisOrbit) {
+        orbitRef.current.rotation.y +=
+          delta * animationSpeed * moon.orbitSpeed * 0.1;
+      }
+
+      if (ephemerisOrbit) {
+        animatedAngleOffsetRef.current = getOrbitalAngleOffset(
+          elapsedSimDays,
+          MOON_ORBIT_DAYS,
+        );
+      }
+
+      if (meshRef.current) {
+        const syncedRotationAngle = getSelfRotationAngleFromElapsedSimDays(
+          elapsedSimDays,
+          moon.selfRotationSpeed,
+        );
+
+        if (ephemerisOrbit && syncedRotationAngle !== null) {
+          meshRef.current.rotation.y = syncedRotationAngle;
+        } else {
+          meshRef.current.rotation.y +=
+            delta * moon.selfRotationSpeed * SELF_ROTATION_VISUAL_SCALE;
+        }
+      }
+    }
+
+    if (moonPositionRef.current && ephemerisOrbit) {
+      moonPositionRef.current.position.copy(moonPosition);
+    }
+  });
+
+  return (
+    <group ref={orbitRef}>
+      <group
+        ref={moonPositionRef}
+        position={[moonPosition.x, moonPosition.y, moonPosition.z]}
+      >
+        <mesh
+          ref={meshRef}
+          scale={hovered ? 1.06 : 1}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect(moon.name);
+          }}
+          onPointerOver={() => {
+            setHovered(true);
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerOut={() => {
+            setHovered(false);
+            document.body.style.cursor = "auto";
+          }}
+        >
+          <sphereGeometry args={[moon.radiusScaled, 24, 24]} />
+          <meshStandardMaterial
+            map={texture}
+            color={moon.color}
+            roughness={0.78}
+            metalness={0.04}
+            emissive={
+              hovered ? moon.color : lightPresetConfig.moonEmissiveColor
+            }
+            emissiveIntensity={
+              hovered
+                ? lightPresetConfig.moonEmissiveBoost + 0.12
+                : lightPresetConfig.moonEmissiveBoost
+            }
+          />
+
+          {showAxis && <primitive object={axisHelper} />}
+        </mesh>
+
+        {showLabels && (
+          <SolarLabel
+            text={getSceneLabel(moon.name, language)}
+            isDark={isDark}
+            position={[0, moon.radiusScaled + 0.25, 0]}
+            distanceFactor={14}
+          />
+        )}
+      </group>
+    </group>
+  );
+}
+
+function RingNode({
+  ring,
+  lightPresetConfig,
+}: {
+  ring: RingRenderModel;
+  lightPresetConfig: (typeof LIGHT_PRESETS)["normal"];
+}) {
+  const texture = useTexture(
+    ring.textureUrl || resolveAssetUrl("./textures/saturn_small_ring_tex.png"),
+  ) as THREE.Texture;
+
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry
+        args={[ring.innerRadiusScaled, ring.outerRadiusScaled, ORBIT_SEGMENTS]}
+      />
+      <meshStandardMaterial
+        map={texture}
+        alphaMap={texture}
+        color={ring.color ?? lightPresetConfig.ringTint}
+        side={THREE.DoubleSide}
+        transparent
+        opacity={lightPresetConfig.ringOpacity}
+        emissive={lightPresetConfig.ringEmissiveColor}
+        emissiveIntensity={lightPresetConfig.ringEmissiveBoost}
+      />
+    </mesh>
+  );
+}
+
+function PlanetNode({
+  planet,
+  ring,
+  moon,
+  language,
+  orbitRadiusOverride,
+  elapsedSimDays,
+  showLabels,
+  showOrbits,
+  showAxis,
+  animationSpeed,
+  isPaused,
+  isDark,
+  lightPresetConfig,
+  ephemerisPosition,
+  ephemerisOrbit,
+  moonEphemerisPosition,
+  moonEphemerisOrbit,
+  onSelect,
+}: {
+  planet: PlanetRenderModel;
+  ring?: RingRenderModel;
+  moon?: MoonRenderModel;
+  language: "EN" | "FR";
+  orbitRadiusOverride?: number;
+  elapsedSimDays: number;
+  showLabels: boolean;
+  showOrbits: boolean;
+  showAxis: boolean;
+  animationSpeed: number;
+  isPaused: boolean;
+  isDark: boolean;
+  lightPresetConfig: (typeof LIGHT_PRESETS)["normal"];
+  ephemerisPosition?: THREE.Vector3;
+  ephemerisOrbit?: { baseAngle: number; scaledRadius: number };
+  moonEphemerisPosition?: THREE.Vector3;
+  moonEphemerisOrbit?: { baseAngle: number; scaledRadius: number };
+  onSelect: (name: string) => void;
+}) {
+  const orbitRef = useRef<THREE.Group>(null);
+  const planetPositionRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  const animatedAngleOffsetRef = useRef(0);
+
+  const axisHelper = useMemo(
+    () => new THREE.AxesHelper(Math.max(planet.radiusScaled * 3, 0.8)),
+    [planet.radiusScaled],
+  );
+
+  const texture = useTexture(
+    planet.textureUrl || resolveAssetUrl("./textures/2k_mercury.jpg"),
+  ) as THREE.Texture;
+  const visualOrbitRadius = orbitRadiusOverride ?? planet.orbitRadius;
+  const planetPosition = ephemerisOrbit
+    ? getProjectedOrbitPosition(
+        ephemerisOrbit.baseAngle,
+        ephemerisOrbit.scaledRadius,
+        elapsedSimDays,
+        planet.yearDays ?? 365.25,
+      )
+    : (ephemerisPosition ?? new THREE.Vector3(visualOrbitRadius, 0, 0));
+
+  /*  useFrame((_, delta) => {
+    if (!isPaused) {
+      if (orbitRef.current && !ephemerisOrbit) {
+        orbitRef.current.rotation.y +=
+          delta * animationSpeed * planet.orbitSpeed * 0.08;
+      }
+
+      if (ephemerisOrbit) {
+        animatedAngleOffsetRef.current +=
+          delta * animationSpeed * planet.orbitSpeed * 0.08;
+      }
+    }
+
+    if (meshRef.current) {
+      meshRef.current.rotation.y +=
+        delta * planet.selfRotationSpeed * SELF_ROTATION_VISUAL_SCALE;
+    }
+
+    if (planetPositionRef.current && ephemerisOrbit) {
+      const angle = ephemerisOrbit.baseAngle - animatedAngleOffsetRef.current;
+      planetPositionRef.current.position.set(
+        Math.cos(angle) * ephemerisOrbit.scaledRadius,
+        0,
+        Math.sin(angle) * ephemerisOrbit.scaledRadius,
+      );
+    }
+  });
+ */
+
+  useFrame((_, delta) => {
+    if (!isPaused) {
+      if (orbitRef.current && !ephemerisOrbit) {
+        orbitRef.current.rotation.y +=
+          delta * animationSpeed * planet.orbitSpeed * 0.08;
+      }
+
+      if (ephemerisOrbit) {
+        animatedAngleOffsetRef.current = getOrbitalAngleOffset(
+          elapsedSimDays,
+          planet.yearDays ?? 365.25,
+        );
+      }
+
+      if (meshRef.current) {
+        const syncedRotationAngle = getSelfRotationAngleFromElapsedSimDays(
+          elapsedSimDays,
+          planet.selfRotationSpeed,
+        );
+
+        if (ephemerisOrbit && syncedRotationAngle !== null) {
+          meshRef.current.rotation.y = syncedRotationAngle;
+        } else {
+          meshRef.current.rotation.y +=
+            delta * planet.selfRotationSpeed * SELF_ROTATION_VISUAL_SCALE;
+        }
+      }
+    }
+
+    if (planetPositionRef.current && ephemerisOrbit) {
+      planetPositionRef.current.position.copy(planetPosition);
+    }
+  });
+  return (
+    <>
+      {showOrbits && (
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry
+            args={[
+              visualOrbitRadius - 0.03,
+              visualOrbitRadius + 0.03,
+              ORBIT_SEGMENTS,
+            ]}
+          />
+
+          <meshBasicMaterial
+            color={isDark ? "#fce803" : "#0257c6"}
+            transparent
+            opacity={isDark ? 0.6 : 0.9}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
+      )}
+
+      <group ref={orbitRef}>
+        <group
+          ref={planetPositionRef}
+          position={[planetPosition.x, planetPosition.y, planetPosition.z]}
+        >
+          <group rotation={[0, 0, planet.tiltRad]}>
+            <mesh
+              ref={meshRef}
+              scale={hovered ? 1.08 : 1}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelect(planet.name);
+              }}
+              onPointerOver={() => {
+                setHovered(true);
+                document.body.style.cursor = "pointer";
+              }}
+              onPointerOut={() => {
+                setHovered(false);
+                document.body.style.cursor = "auto";
+              }}
+            >
+              <sphereGeometry args={[planet.radiusScaled, 40, 40]} />
+              <meshStandardMaterial
+                map={texture}
+                color={planet.color}
+                roughness={0.72}
+                metalness={0.05}
+                emissive={
+                  hovered ? planet.color : lightPresetConfig.planetEmissiveColor
+                }
+                emissiveIntensity={
+                  hovered
+                    ? lightPresetConfig.planetEmissiveBoost + 0.25
+                    : lightPresetConfig.planetEmissiveBoost
+                }
+              />
+              {showAxis && <primitive object={axisHelper} />}
+            </mesh>
+
+            {/* {ring && <RingNode ring={ring} />} */}
+            {ring && (
+              <RingNode ring={ring} lightPresetConfig={lightPresetConfig} />
+            )}
+          </group>
+
+          {moon && (
+            <MoonNode
+              moon={moon}
+              language={language}
+              elapsedSimDays={elapsedSimDays}
+              showLabels={showLabels}
+              showAxis={showAxis}
+              animationSpeed={animationSpeed}
+              isPaused={isPaused}
+              isDark={isDark}
+              lightPresetConfig={lightPresetConfig}
+              ephemerisPosition={moonEphemerisPosition}
+              ephemerisOrbit={moonEphemerisOrbit}
+              onSelect={onSelect}
+            />
+          )}
+
+          {showLabels && (
+            <SolarLabel
+              text={getSceneLabel(planet.name, language)}
+              isDark={isDark}
+              position={[0, planet.radiusScaled + 0.4, 0]}
+              distanceFactor={14}
+            />
+          )}
+        </group>
+      </group>
+    </>
+  );
+}
+
+function AsteroidBeltNode({
+  belt,
+  animationSpeed,
+  isPaused,
+  lightPresetConfig,
+  // hovered,
+}: {
+  belt: BeltRenderModel;
+  animationSpeed: number;
+  isPaused: boolean;
+  lightPresetConfig: (typeof LIGHT_PRESETS)["normal"];
+  // hovered: boolean;
+}) {
+  const beltRef = useRef<THREE.Group>(null);
+  const instancesRef = useRef<THREE.InstancedMesh>(null);
+
+  const asteroidTransforms = useMemo(() => {
+    return Array.from({ length: belt.count }, () => {
+      const angle = Math.random() * Math.PI * 2;
+      const radialSpread = Math.random();
+      const radius = THREE.MathUtils.lerp(
+        belt.innerRadiusScaled,
+        belt.outerRadiusScaled,
+        radialSpread,
+      );
+      const verticalOffset = (Math.random() - 0.5) * belt.thickness * 0.22;
+      const radialOffset = (Math.random() - 0.5) * 0.12;
+      // const scale = THREE.MathUtils.lerp(0.035, 0.11, Math.pow(Math.random(), 1.8));
+      const scale = THREE.MathUtils.lerp(
+        0.012,
+        0.045,
+        Math.pow(Math.random(), 1.8),
+      );
+
+      return {
+        position: new THREE.Vector3(
+          Math.cos(angle) * (radius + radialOffset),
+          verticalOffset,
+          Math.sin(angle) * (radius + radialOffset),
+        ),
+        rotation: new THREE.Euler(
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+        ),
+        scale,
+      };
+    });
+  }, [
+    belt.count,
+    belt.innerRadiusScaled,
+    belt.outerRadiusScaled,
+    belt.thickness,
+  ]);
+
+  const asteroidGeometry = useMemo(
+    () => new THREE.IcosahedronGeometry(1, 0),
+    [],
+  );
+
+  useLayoutEffect(() => {
+    if (!instancesRef.current) return;
+
+    const tempObject = new THREE.Object3D();
+
+    asteroidTransforms.forEach(({ position, rotation, scale }, index) => {
+      tempObject.position.copy(position);
+      tempObject.rotation.copy(rotation);
+      tempObject.scale.setScalar(scale);
+      tempObject.updateMatrix();
+      instancesRef.current?.setMatrixAt(index, tempObject.matrix);
+    });
+
+    instancesRef.current.instanceMatrix.needsUpdate = true;
+  }, [asteroidTransforms]);
+
+  useFrame((_, delta) => {
+    if (isPaused || !beltRef.current) return;
+    beltRef.current.rotation.y +=
+      delta * animationSpeed * belt.orbitSpeed * 0.1;
+  });
+
+  return (
+    <group ref={beltRef}>
+      <instancedMesh
+        ref={instancesRef}
+        args={[asteroidGeometry, undefined, asteroidTransforms.length]}
+        castShadow={false}
+        receiveShadow={false}
+        frustumCulled={false}
+      >
+        <meshStandardMaterial
+          color={belt.color}
+          roughness={0.95}
+          metalness={0.02}
+          // emissive={0x18130d}
+          // emissiveIntensity={0.14}
+          emissive={lightPresetConfig.beltEmissiveColor}
+          emissiveIntensity={lightPresetConfig.beltEmissiveBoost}
+          /*       emissive={
+                  hovered ? belt.color : lightPresetConfig.beltEmissiveColor
+                }
+                emissiveIntensity={
+                  hovered
+                    ? lightPresetConfig.beltEmissiveBoost + 0.14
+                    : lightPresetConfig.beltEmissiveBoost
+                } */
+        />
+      </instancedMesh>
+    </group>
+  );
+}
+
+export const Scene: React.FC<SceneProps> = ({
+  onPlanetSelect,
+  ephemerides,
+  elapsedSimDays,
+  language,
+  showLabels,
+  showOrbits,
+  showAxis,
+  animationSpeed,
+  isPaused,
+  isDark,
+  backgroundUrl,
+  backgroundOpacity,
+  lightPreset,
+}) => {
+  const sunRef = useRef<THREE.Mesh>(null);
+  const axisHelper = useMemo(() => new THREE.AxesHelper(5), []);
+  const [sunHovered, setSunHovered] = useState(false);
+
+  const sunTexture = useTexture(
+    resolveAssetUrl("./textures/2k_sun.jpg"),
+  ) as THREE.Texture;
+
+  const backgroundTexture = useTexture(
+    backgroundUrl || resolveAssetUrl("./textures/sky/2k_stars.jpg"),
+  ) as THREE.Texture;
+  const activeLightPreset = LIGHT_PRESETS[lightPreset] ?? LIGHT_PRESETS.normal;
+  const sceneModel = useMemo(() => {
+    const planets = simulationBodyConfigs
+      .filter((obj) => obj.kind === "planet" || obj.kind === "dwarf")
+      .map((obj) => createPlanetDescriptor(obj)) as PlanetRenderModel[];
+
+    const rings = simulationBodyConfigs
+      .filter((obj) => obj.kind === "planet" && obj.rings?.enabled)
+      .map((obj) => createRingDescriptor(obj)) as RingRenderModel[];
+
+    const belt = simulationBodyConfigs
+      .filter((obj) => obj.kind === "belt")
+      .map((obj) => createBeltDescriptor(obj))[0] as
+      | BeltRenderModel
+      | undefined;
+
+    const ringByParent = new Map<string, RingRenderModel>();
+    rings.forEach((ring) => {
+      ringByParent.set(ring.parentName, ring);
+    });
+
+    const moonByParent = new Map<string, MoonRenderModel>();
+    const moonConfig = simulationBodyConfigs.find(
+      (obj) =>
+        obj.kind === "satellite" &&
+        obj.parentName === "Earth" &&
+        obj.name === "Moon",
+    );
+    if (moonConfig) {
+      moonByParent.set(
+        "Earth",
+        createEarthMoonDescriptor(planets.find((planet) => planet.name === "Earth")) as MoonRenderModel,
+      );
+    }
+
+    return { planets, belt, ringByParent, moonByParent };
+  }, []);
+  const projectedAsteroidBeltRadii = useMemo(() => {
+    return {
+      inner: projectHeliocentricDistanceToSceneRadius(
+        ASTEROID_BELT_AU_RANGE.inner,
+        EPHEMERIS_LOG_SCALE_OPTIONS,
+      ),
+      outer: projectHeliocentricDistanceToSceneRadius(
+        ASTEROID_BELT_AU_RANGE.outer,
+        EPHEMERIS_LOG_SCALE_OPTIONS,
+      ),
+    };
+  }, []);
+  const projectedEphemerides = useMemo(() => {
+    const entries = SUPPORTED_EPHEMERIS_PLANET_NAMES.flatMap((bodyName) => {
+      const entry = ephemerides?.[bodyName];
+      if (!entry) {
+        return [];
+      }
+
+      const { x, y, z } = entry.coordinates;
+      const projected = projectEphemerisToScenePlane(
+        x,
+        y,
+        z,
+        EPHEMERIS_LOG_SCALE_OPTIONS,
+      );
+
+      /*  console.log("[ephemeris-apply]", {
+        bodyName,
+        raw: { x, y, z },
+        orbitalAngle: projected.orbitalAngle,
+        finalScenePosition: {
+          x: projected.position.x,
+          y: projected.position.y,
+          z: projected.position.z,
+        },
+      }); */
+
+      return [[bodyName, projected] as const];
+    });
+
+    return Object.fromEntries(entries) as Partial<
+      Record<
+        SupportedEphemerisBodyName,
+        {
+          orbitalAngle: number;
+          scaledRadius: number;
+          position: THREE.Vector3;
+        }
+      >
+    >;
+  }, [ephemerides]);
+  const moonRelativeEphemerisPosition = useMemo(() => {
+    const earthProjection = projectedEphemerides.Earth;
+    const moonProjection = projectedEphemerides.Moon;
+
+    if (!earthProjection || !moonProjection) {
+      return undefined;
+    }
+
+    const relativeOffset = moonProjection.position
+      .clone()
+      .sub(earthProjection.position);
+    relativeOffset.y = 0;
+
+    const relativeLength = relativeOffset.length();
+    const fallbackMoon =
+      sceneModel.moonByParent.get("Earth")?.orbitRadius ?? 0.5;
+
+    if (!Number.isFinite(relativeLength) || relativeLength <= 0) {
+      return new THREE.Vector3(fallbackMoon, 0, 0);
+    }
+
+    const clampedLength = Math.min(
+      Math.max(relativeLength, fallbackMoon * 0.6),
+      fallbackMoon * 1.6,
+    );
+
+    return relativeOffset.normalize().multiplyScalar(clampedLength);
+  }, [projectedEphemerides, sceneModel.moonByParent]);
+  const moonRelativeEphemerisOrbit = useMemo(() => {
+    if (!moonRelativeEphemerisPosition) {
+      return undefined;
+    }
+
+    return {
+      baseAngle: Math.atan2(
+        moonRelativeEphemerisPosition.z,
+        moonRelativeEphemerisPosition.x,
+      ),
+      scaledRadius: moonRelativeEphemerisPosition.length(),
+    };
+  }, [moonRelativeEphemerisPosition]);
+
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = "auto";
+    };
+  }, []);
+
+  useFrame((_, delta) => {
+    if (isPaused || !sunRef.current) return;
+    sunRef.current.rotation.y += delta * animationSpeed * SUN_ROTATION_SPEED;
+  });
+
+  return (
+    <>
+      <CameraSetup />
+
+      <color attach="background" args={[isDark ? "#050505" : "#f0f4f8"]} />
+
+      <mesh scale={[-1, 1, 1]}>
+        <sphereGeometry args={[80, 64, 64]} />
+        <meshBasicMaterial
+          map={backgroundTexture}
+          side={THREE.BackSide}
+          transparent
+          opacity={backgroundOpacity}
+          depthWrite={false}
+        />
+      </mesh>
+
+      <Stars
+        radius={120}
+        depth={80}
+        count={isDark ? 5000 : 2000}
+        factor={4}
+        saturation={0}
+        fade
+        speed={0.8}
+      />
+
+      <ambientLight
+        intensity={
+          isDark
+            ? activeLightPreset.ambientIntensity
+            : activeLightPreset.ambientIntensity * 0.8
+        }
+        color={activeLightPreset.ambientColor}
+      />
+
+      <hemisphereLight
+        intensity={activeLightPreset.cameraFillIntensity}
+        color={activeLightPreset.cameraFillColor}
+        groundColor={isDark ? "#1a2230" : "#bfc7d5"}
+      />
+
+      <pointLight
+        position={[0, 0, 0]}
+        intensity={
+          isDark
+            ? activeLightPreset.sunIntensity
+            : activeLightPreset.sunIntensity * 0.6
+        }
+        distance={220}
+        decay={activeLightPreset.sunLightDecay}
+        color={activeLightPreset.sunLightColor}
+      />
+
+      <directionalLight
+        position={[18, 10, 14]}
+        intensity={isDark ? 0.9 : 0.45}
+        color="#ffffff"
+      />
+
+      <mesh
+        ref={sunRef}
+        scale={sunHovered ? 1.04 : 1}
+        onClick={(event) => {
+          event.stopPropagation();
+          onPlanetSelect("Sun");
+        }}
+        onPointerOver={() => {
+          setSunHovered(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          setSunHovered(false);
+          document.body.style.cursor = "auto";
+        }}
+      >
+        <sphereGeometry args={[SUN_RADIUS, 48, 48]} />
+        <meshBasicMaterial map={sunTexture} color="#ffffff" />
+      </mesh>
+
+      <mesh>
+        <sphereGeometry args={[SUN_RADIUS * 1.18, 32, 32]} />
+        <meshBasicMaterial
+          color="#ffcc66"
+          transparent
+          opacity={isDark ? 0.08 : 0.04}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {showLabels && (
+        <SolarLabel
+          text={getSceneLabel("Sun", language)}
+          isDark={isDark}
+          position={[0, SUN_RADIUS + 0.8, 0]}
+          distanceFactor={16}
+        />
+      )}
+
+      {sceneModel.belt && (
+        <AsteroidBeltNode
+          belt={{
+            ...sceneModel.belt,
+            innerRadiusScaled: projectedAsteroidBeltRadii.inner,
+            outerRadiusScaled: projectedAsteroidBeltRadii.outer,
+          }}
+          animationSpeed={animationSpeed}
+          isPaused={isPaused}
+          lightPresetConfig={activeLightPreset}
+          // hovered={asteroidHovered}
+        />
+      )}
+
+      {sceneModel.planets.map((planet) => (
+        <PlanetNode
+          key={planet.name}
+          planet={planet}
+          ring={sceneModel.ringByParent.get(planet.name)}
+          moon={sceneModel.moonByParent.get(planet.name)}
+          ephemerisPosition={
+            projectedEphemerides[planet.name as SupportedEphemerisBodyName]
+              ?.position
+          }
+          ephemerisOrbit={
+            projectedEphemerides[planet.name as SupportedEphemerisBodyName]
+              ? {
+                  baseAngle:
+                    projectedEphemerides[
+                      planet.name as SupportedEphemerisBodyName
+                    ]!.orbitalAngle,
+                  scaledRadius:
+                    projectedEphemerides[
+                      planet.name as SupportedEphemerisBodyName
+                    ]!.scaledRadius,
+                }
+              : undefined
+          }
+          orbitRadiusOverride={projectedEphemerides[
+            planet.name as SupportedEphemerisBodyName
+          ]?.position.length()}
+          moonEphemerisPosition={
+            planet.name === "Earth" ? moonRelativeEphemerisPosition : undefined
+          }
+          moonEphemerisOrbit={
+            planet.name === "Earth" ? moonRelativeEphemerisOrbit : undefined
+          }
+          language={language}
+          elapsedSimDays={elapsedSimDays}
+          showLabels={showLabels}
+          showOrbits={showOrbits}
+          showAxis={showAxis}
+          animationSpeed={animationSpeed}
+          isPaused={isPaused}
+          isDark={isDark}
+          lightPresetConfig={activeLightPreset}
+          onSelect={onPlanetSelect}
+        />
+      ))}
+
+      {showAxis && <primitive object={axisHelper} />}
+
+      <OrbitControls enablePan={false} minDistance={8} maxDistance={60} />
+    </>
+  );
+};
