@@ -2,8 +2,8 @@ import {
   degToRad,
   getOrbitSpeed,
   getPlanetSelfRotationSpeed,
-  getScaledDistance,
-  getScaledRadius,
+  // getScaledDistance,
+  //getScaledRadius,
   resolveAssetUrl,
 } from "./sceneObjectUtils.js";
 import { getSimulationBodyVisuals } from "./simulationVisuals.js";
@@ -84,8 +84,8 @@ export function createPlanetDescriptor(obj) {
   return {
     ...obj,
     textureUrl: resolveAssetUrl(obj.texture),
-    orbitRadius: getScaledDistance(distance),
-    radiusScaled: getScaledRadius(radius),
+    orbitRadius: distance,
+    radiusScaled: radius,
     tiltRad: degToRad(obj.tiltDeg || 0),
     orbitSpeed: getOrbitSpeed(obj.yearDays),
     selfRotationSpeed: getPlanetSelfRotationSpeed(obj.name),

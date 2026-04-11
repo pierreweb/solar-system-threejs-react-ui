@@ -12,6 +12,46 @@ interface DatePickerModalProps {
   initialDate: Date;
 }
 
+type SeasonalShortcutKey =
+  | 'springEquinox'
+  | 'summerSolstice'
+  | 'autumnEquinox'
+  | 'winterSolstice';
+
+const SEASONAL_SHORTCUT_CONFIG: Record<
+  SeasonalShortcutKey,
+  { monthIndex: number; day: number; label: { EN: string; FR: string } }
+> = {
+  springEquinox: {
+    monthIndex: 2,
+    day: 20,
+    label: { EN: 'Spring Equinox', FR: 'Equinoxe de printemps' },
+  },
+  summerSolstice: {
+    monthIndex: 5,
+    day: 21,
+    label: { EN: 'Summer Solstice', FR: 'Solstice d’été' },
+  },
+  autumnEquinox: {
+    monthIndex: 8,
+    day: 22,
+    label: { EN: 'Autumn Equinox', FR: 'Equinoxe d’automne' },
+  },
+  winterSolstice: {
+    monthIndex: 11,
+    day: 21,
+    label: { EN: 'Winter Solstice', FR: 'Solstice d’hiver' },
+  },
+};
+
+function getSeasonalShortcutDate(
+  season: SeasonalShortcutKey,
+  year: number,
+) {
+  const { monthIndex, day } = SEASONAL_SHORTCUT_CONFIG[season];
+  return new Date(year, monthIndex, day);
+}
+
 export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClose, onSelect, language, isDark, initialDate }) => {
   const [currentDate, setCurrentDate] = useState(initialDate);
   
@@ -35,6 +75,14 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
     : ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
   const years = Array.from({ length: 201 }, (_, i) => 1900 + i); // 1900 to 2100
+  const seasonalShortcutEntries = Object.entries(
+    SEASONAL_SHORTCUT_CONFIG,
+  ) as [SeasonalShortcutKey, (typeof SEASONAL_SHORTCUT_CONFIG)[SeasonalShortcutKey]][];
+
+  const applySelectedDate = (date: Date) => {
+    onSelect(date);
+    onClose();
+  };
 
   const handleMonthChange = (monthIndex: number) => {
     const year = currentDate.getFullYear();
@@ -93,7 +141,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
             </div>
 
             {/* Month/Year Toggles */}
-            <div className="flex gap-2 mb-4">
+             <div className="flex gap-2 mb-4">
               <button 
                 onClick={() => {
                   setShowMonthSelector(!showMonthSelector);
@@ -120,6 +168,39 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
                 {currentDate.getFullYear()}
                 <ChevronDown size={14} className={isDark ? "text-gold-neon" : "text-mist-primary"} />
               </button>
+            </div>
+
+            <div className="mb-4">
+              <p
+                className={cn(
+                  "mb-2 text-[10px] font-bold tracking-widest uppercase opacity-60",
+                )}
+              >
+                {language === 'EN' ? 'Seasonal Shortcuts' : 'Raccourcis saisonniers'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {seasonalShortcutEntries.map(([seasonKey, seasonConfig]) => (
+                  <button
+                    key={seasonKey}
+                    onClick={() => {
+                      const seasonalDate = getSeasonalShortcutDate(
+                        seasonKey,
+                        currentDate.getFullYear(),
+                      );
+                      setCurrentDate(seasonalDate);
+                      applySelectedDate(seasonalDate);
+                    }}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-[10px] font-bold tracking-wide transition-all",
+                      isDark
+                        ? "border-white/10 text-white/75 hover:border-gold-neon/50 hover:text-gold-neon hover:bg-white/5"
+                        : "border-black/10 text-black/75 hover:border-mist-primary/50 hover:text-mist-primary hover:bg-black/5",
+                    )}
+                  >
+                    {seasonConfig.label[language]}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Scrollers (Conditional) */}
@@ -237,8 +318,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
                 </button>
                 <button 
                   onClick={() => {
-                    onSelect(currentDate);
-                    onClose();
+                    applySelectedDate(currentDate);
                   }}
                   className={cn(
                     "px-4 py-2 text-xs font-bold rounded-lg transition-transform hover:scale-105",

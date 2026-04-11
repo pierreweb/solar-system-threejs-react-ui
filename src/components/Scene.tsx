@@ -95,10 +95,10 @@ interface SunRenderModel {
 
 const ORBIT_SEGMENTS = 128;
 const SELF_ROTATION_VISUAL_SCALE = 6;
-const ASTEROID_BELT_AU_RANGE = {
+/* const ASTEROID_BELT_AU_RANGE = {
   inner: 2.2,
   outer: 3.2,
-} as const;
+} as const; */
 const EPHEMERIS_LOG_SCALE_OPTIONS = {
   minRadius: 5,
   logStretch: 4,
@@ -117,6 +117,32 @@ const SUPPORTED_EPHEMERIS_PLANET_NAMES: SupportedEphemerisBodyName[] = [
   "Neptune",
   "Pluto",
 ];
+/* const FIXED_RADIUS_EPHEMERIS_PLANET_NAMES = new Set<SupportedEphemerisBodyName>(
+  [
+    "Mercury",
+    "Venus",
+    "Earth",
+    "Mars",
+    "Jupiter",
+    "Saturn",
+    "Uranus",
+    "Neptune",
+  ],
+); */
+const FIXED_RADIUS_EPHEMERIS_PLANET_NAMES = new Set<SupportedEphemerisBodyName>(
+  [
+    "Mercury",
+    "Venus",
+    "Earth",
+    "Mars",
+    "Ceres",
+    "Jupiter",
+    "Saturn",
+    "Uranus",
+    "Neptune",
+    "Pluto",
+  ],
+);
 
 const localizedSceneLabels: Record<string, { EN: string; FR: string }> = {
   Sun: { EN: "Sun", FR: "Soleil" },
@@ -228,7 +254,7 @@ function getProjectedOrbitPosition(
   orbitalPeriodDays: number,
 ) {
   const finalAngle =
-    baseAngle - getOrbitalAngleOffset(elapsedSimDays, orbitalPeriodDays);
+    baseAngle + getOrbitalAngleOffset(elapsedSimDays, orbitalPeriodDays);
 
   return new THREE.Vector3(
     Math.cos(finalAngle) * scaledRadius,
@@ -787,14 +813,25 @@ function AsteroidBeltNode({
         belt.outerRadiusScaled,
         radialSpread,
       );
-      const verticalOffset = (Math.random() - 0.5) * belt.thickness * 0.22;
-      const radialOffset = (Math.random() - 0.5) * 0.12;
-      // const scale = THREE.MathUtils.lerp(0.035, 0.11, Math.pow(Math.random(), 1.8));
+      //const verticalOffset = (Math.random() - 0.5) * belt.thickness * 0.22;
+      //const radialOffset = (Math.random() - 0.5) * 0.12;
+      const verticalOffset = (Math.random() - 0.5) * belt.thickness * 0.6;
+      const radialOffset = (Math.random() - 0.5) * 0.5;
+      /*    const scale = THREE.MathUtils.lerp(
+        0.05,
+        0.16,
+        Math.pow(Math.random(), 1.8),
+      ); */
       const scale = THREE.MathUtils.lerp(
-        0.012,
-        0.045,
+        0.035,
+        0.11,
         Math.pow(Math.random(), 1.8),
       );
+      // const scale = THREE.MathUtils.lerp(
+      //   0.012,
+      //   0.045,
+      //   Math.pow(Math.random(), 1.8),
+      // );
 
       return {
         position: new THREE.Vector3(
@@ -936,7 +973,8 @@ export const Scene: React.FC<SceneProps> = ({
 
     return { sun, planets, belt, ringByParent, moonByParent };
   }, []);
-  const projectedAsteroidBeltRadii = useMemo(() => {
+  // console.log("BELT MODEL", sceneModel.belt);
+  /*  const projectedAsteroidBeltRadii = useMemo(() => {
     return {
       inner: projectHeliocentricDistanceToSceneRadius(
         ASTEROID_BELT_AU_RANGE.inner,
@@ -947,7 +985,7 @@ export const Scene: React.FC<SceneProps> = ({
         EPHEMERIS_LOG_SCALE_OPTIONS,
       ),
     };
-  }, []);
+  }, []); */
   const projectedEphemerides = useMemo(() => {
     const entries = SUPPORTED_EPHEMERIS_PLANET_NAMES.flatMap((bodyName) => {
       const entry = ephemerides?.[bodyName];
@@ -988,6 +1026,37 @@ export const Scene: React.FC<SceneProps> = ({
       >
     >;
   }, [ephemerides]);
+  const projectedPlanetEphemerisOrbits = useMemo(() => {
+    const entries = sceneModel.planets.flatMap((planet) => {
+      const bodyName = planet.name as SupportedEphemerisBodyName;
+      const projectedEphemeris = projectedEphemerides[bodyName];
+
+      if (!projectedEphemeris) {
+        return [];
+      }
+
+      const scaledRadius = FIXED_RADIUS_EPHEMERIS_PLANET_NAMES.has(bodyName)
+        ? planet.orbitRadius
+        : projectedEphemeris.scaledRadius;
+
+      return [
+        [
+          bodyName,
+          {
+            baseAngle: projectedEphemeris.orbitalAngle,
+            scaledRadius,
+          },
+        ] as const,
+      ];
+    });
+
+    return Object.fromEntries(entries) as Partial<
+      Record<
+        SupportedEphemerisBodyName,
+        { baseAngle: number; scaledRadius: number }
+      >
+    >;
+  }, [projectedEphemerides, sceneModel.planets]);
   const moonRelativeEphemerisPosition = useMemo(() => {
     const earthProjection = projectedEphemerides.Earth;
     const moonProjection = projectedEphemerides.Moon;
@@ -1106,7 +1175,8 @@ export const Scene: React.FC<SceneProps> = ({
         onSelect={onPlanetSelect}
       />
 
-      {sceneModel.belt && (
+      {
+        /* sceneModel.belt && (
         <AsteroidBeltNode
           belt={{
             ...sceneModel.belt,
@@ -1118,7 +1188,16 @@ export const Scene: React.FC<SceneProps> = ({
           lightPresetConfig={activeLightPreset}
           // hovered={asteroidHovered}
         />
-      )}
+      ) */
+        sceneModel.belt && (
+          <AsteroidBeltNode
+            belt={sceneModel.belt}
+            animationSpeed={animationSpeed}
+            isPaused={isPaused}
+            lightPresetConfig={activeLightPreset}
+          />
+        )
+      }
 
       {sceneModel.planets.map((planet) => (
         <PlanetNode
@@ -1131,22 +1210,19 @@ export const Scene: React.FC<SceneProps> = ({
               ?.position
           }
           ephemerisOrbit={
-            projectedEphemerides[planet.name as SupportedEphemerisBodyName]
-              ? {
-                  baseAngle:
-                    projectedEphemerides[
-                      planet.name as SupportedEphemerisBodyName
-                    ]!.orbitalAngle,
-                  scaledRadius:
-                    projectedEphemerides[
-                      planet.name as SupportedEphemerisBodyName
-                    ]!.scaledRadius,
-                }
-              : undefined
+            projectedPlanetEphemerisOrbits[
+              planet.name as SupportedEphemerisBodyName
+            ]
           }
-          orbitRadiusOverride={projectedEphemerides[
-            planet.name as SupportedEphemerisBodyName
-          ]?.position.length()}
+          orbitRadiusOverride={
+            FIXED_RADIUS_EPHEMERIS_PLANET_NAMES.has(
+              planet.name as SupportedEphemerisBodyName,
+            )
+              ? undefined
+              : projectedEphemerides[
+                  planet.name as SupportedEphemerisBodyName
+                ]?.position.length()
+          }
           moonEphemerisPosition={
             planet.name === "Earth" ? moonRelativeEphemerisPosition : undefined
           }

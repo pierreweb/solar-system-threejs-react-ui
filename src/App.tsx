@@ -452,6 +452,11 @@ export default function App() {
   const drawerSoundRef = React.useRef<HTMLAudioElement | null>(null);
   const isFirstRun = React.useRef(true);
 
+  const handleApplySimulationDate = (date: Date) => {
+    setEphemerisDate(date);
+    setDisplayDate(date);
+  };
+
   useEffect(() => {
     if (isVideoHovered) {
       if (isMusicOn) {
@@ -1501,10 +1506,7 @@ export default function App() {
       <DatePickerModal
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
-        onSelect={(date) => {
-          setEphemerisDate(date);
-          setDisplayDate(date);
-        }}
+        onSelect={handleApplySimulationDate}
         language={language}
         isDark={isDark}
         initialDate={ephemerisDate}

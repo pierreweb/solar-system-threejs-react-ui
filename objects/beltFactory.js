@@ -1,17 +1,11 @@
-import { getOrbitSpeed, getScaledDistance } from "./sceneObjectUtils.js";
-
-function auToSceneDistance(radiusAu, scale, minDistance) {
-  return minDistance + Math.log1p(radiusAu) * scale;
-}
+/* import { getOrbitSpeed, getScaledDistance } from "./sceneObjectUtils.js";
+import { getSimulationBeltVisuals } from "./simulationVisuals.js";
+ */
+import { getOrbitSpeed } from "./sceneObjectUtils.js";
+import { getSimulationBeltVisuals } from "./simulationVisuals.js";
 
 export function createBeltObject(obj, preset, deps) {
-  const {
-    THREE,
-    group,
-    objectRegistry,
-    logDistanceScale = 70,
-    minSceneDistance = 8,
-  } = deps;
+  const { THREE, group, objectRegistry } = deps;
 
   const orbit = new THREE.Object3D();
   group.add(orbit);
@@ -28,17 +22,7 @@ export function createBeltObject(obj, preset, deps) {
     emissiveIntensity: preset.beltEmissiveBoost,
   });
 
-  const innerRadius = auToSceneDistance(
-    obj.innerAu ?? 2.2,
-    logDistanceScale,
-    minSceneDistance,
-  );
-
-  const outerRadius = auToSceneDistance(
-    obj.outerAu ?? 3.2,
-    logDistanceScale,
-    minSceneDistance,
-  );
+  const { innerRadius, outerRadius } = getSimulationBeltVisuals(obj);
 
   for (let i = 0; i < obj.count; i++) {
     const angle = Math.random() * Math.PI * 2;
@@ -63,8 +47,10 @@ export function createBeltObject(obj, preset, deps) {
       Math.random() * Math.PI,
     );
 
-    const scale = THREE.MathUtils.lerp(0.7, 2.2, Math.random());
-    asteroid.scale.setScalar(scale);
+    // const scale = THREE.MathUtils.lerp(0.7, 2.2, Math.random());
+    const scale = THREE.MathUtils.lerp(0.5, 1.16, Math.pow(Math.random(), 1.8));
+
+    asteroid.scale.setScalar(100.5);
 
     beltGroup.add(asteroid);
   }
@@ -84,15 +70,12 @@ export function createBeltObject(obj, preset, deps) {
 }
 
 export function createBeltDescriptor(obj) {
-  const innerDistance =
-    obj.innerAu != null ? 47 : getScaledDistance(obj.innerRadius ?? 47);
-  const outerDistance =
-    obj.outerAu != null ? 58 : getScaledDistance(obj.outerRadius ?? 58);
+  const { innerRadius, outerRadius } = getSimulationBeltVisuals(obj);
 
   return {
     ...obj,
-    innerRadiusScaled: getScaledDistance(innerDistance),
-    outerRadiusScaled: getScaledDistance(outerDistance),
+    innerRadiusScaled: innerRadius,
+    outerRadiusScaled: outerRadius,
     orbitSpeed: getOrbitSpeed(obj.yearDays) * 0.12,
   };
 }
