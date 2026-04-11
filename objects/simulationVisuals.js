@@ -5,19 +5,21 @@
 //const DEFAULT_RADIUS_MULTIPLIER = 2.0;
 const RADIUS_SCALE_CORRECTION = 0.5;
 const DISTANCE_SCALE_CORRECTION = 5.0;
-const MIN_SIM_RADIUS = 0.35;
+const MIN_SIM_RADIUS = 0.045;
 const MIN_DISTANCE_FROM_SUN = 3.0; // petite marge visuelle optionnelle
+const MAX_SUN_RADIUS = 8.0;
+const MAX_PLANET_RADIUS = 5.0;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
 function getSunMaxRadius() {
-  return 8.0;
+  return MAX_SUN_RADIUS;
 }
 
 function getPlanetMaxRadius() {
-  return 5.0;
+  return MAX_PLANET_RADIUS;
 }
 function getResolvedSunRadius() {
   const sunPhysicalRadiusKm = 696_340;
@@ -43,6 +45,8 @@ function adaptedScaledRadius(physicalRadiusKm) {
     1,
   );
   const adaptedRadius = 0.1 + 10 * Math.sqrt(ratio); //Math.log10(1.4 + 20.0 * ratio);
+  //const adaptedRadius = 0.000028093 * normalized + 0.03671;
+
   //console.log(`Adapted  radius for ${physicalRadiusKm}: ${adaptedRadius}`);
   return adaptedRadius;
 }
@@ -107,7 +111,7 @@ export function getSimulationBodyVisuals(body = {}) {
             )
         : 0;
 
-  //  console.log(`Resolved radius for ${name}: ${resolvedRadius}`);
+  console.log(`Resolved radius for ${name}: ${resolvedRadius}`);
   //console.log(`Resolved distance for ${name}: ${resolvedDistance}`);
   //console.log(`Sun max radius: ${getSunMaxRadius()}`); */
 

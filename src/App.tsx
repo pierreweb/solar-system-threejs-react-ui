@@ -554,7 +554,7 @@ export default function App() {
   const formattedDate = displayDate.toLocaleDateString(
     language === "EN" ? "en-US" : "fr-FR",
     {
-      weekday: "long",
+      ...(isPaused ? { weekday: "long" as const } : {}),
       year: "numeric",
       month: "long",
       day: "numeric",

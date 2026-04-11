@@ -100,10 +100,7 @@ interface SunRenderModel {
 
 const ORBIT_SEGMENTS = 128;
 const SELF_ROTATION_VISUAL_SCALE = 6;
-/* const ASTEROID_BELT_AU_RANGE = {
-  inner: 2.2,
-  outer: 3.2,
-} as const; */
+
 const EPHEMERIS_LOG_SCALE_OPTIONS = {
   minRadius: 5,
   logStretch: 4,
@@ -122,18 +119,7 @@ const SUPPORTED_EPHEMERIS_PLANET_NAMES: SupportedEphemerisBodyName[] = [
   "Neptune",
   "Pluto",
 ];
-/* const FIXED_RADIUS_EPHEMERIS_PLANET_NAMES = new Set<SupportedEphemerisBodyName>(
-  [
-    "Mercury",
-    "Venus",
-    "Earth",
-    "Mars",
-    "Jupiter",
-    "Saturn",
-    "Uranus",
-    "Neptune",
-  ],
-); */
+
 const FIXED_RADIUS_EPHEMERIS_PLANET_NAMES = new Set<SupportedEphemerisBodyName>(
   [
     "Mercury",
@@ -1240,7 +1226,8 @@ export const Scene: React.FC<SceneProps> = ({
 
       {showAxis && <primitive object={axisHelper} />}
 
-      <OrbitControls enablePan={false} minDistance={8} maxDistance={60} />
+      {/* <OrbitControls enablePan={false} minDistance={8} maxDistance={60} /> */}
+      <OrbitControls enablePan={true} minDistance={8} maxDistance={100} />
     </>
   );
 };
