@@ -81,6 +81,11 @@ interface BeltRenderModel {
   innerRadiusScaled: number;
   outerRadiusScaled: number;
   orbitSpeed: number;
+  asteroidScaleMin: number;
+  asteroidScaleMax: number;
+  verticalSpread: number;
+  radialJitter: number;
+  geometryRadius: number;
 }
 
 interface SunRenderModel {
@@ -813,25 +818,13 @@ function AsteroidBeltNode({
         belt.outerRadiusScaled,
         radialSpread,
       );
-      //const verticalOffset = (Math.random() - 0.5) * belt.thickness * 0.22;
-      //const radialOffset = (Math.random() - 0.5) * 0.12;
-      const verticalOffset = (Math.random() - 0.5) * belt.thickness * 0.6;
-      const radialOffset = (Math.random() - 0.5) * 0.5;
-      /*    const scale = THREE.MathUtils.lerp(
-        0.05,
-        0.16,
-        Math.pow(Math.random(), 1.8),
-      ); */
+      const verticalOffset = (Math.random() - 0.5) * belt.verticalSpread;
+      const radialOffset = (Math.random() - 0.5) * belt.radialJitter;
       const scale = THREE.MathUtils.lerp(
-        0.035,
-        0.11,
+        belt.asteroidScaleMin,
+        belt.asteroidScaleMax,
         Math.pow(Math.random(), 1.8),
       );
-      // const scale = THREE.MathUtils.lerp(
-      //   0.012,
-      //   0.045,
-      //   Math.pow(Math.random(), 1.8),
-      // );
 
       return {
         position: new THREE.Vector3(
@@ -851,12 +844,15 @@ function AsteroidBeltNode({
     belt.count,
     belt.innerRadiusScaled,
     belt.outerRadiusScaled,
-    belt.thickness,
+    belt.verticalSpread,
+    belt.radialJitter,
+    belt.asteroidScaleMin,
+    belt.asteroidScaleMax,
   ]);
 
   const asteroidGeometry = useMemo(
-    () => new THREE.IcosahedronGeometry(1, 0),
-    [],
+    () => new THREE.IcosahedronGeometry(belt.geometryRadius, 0),
+    [belt.geometryRadius],
   );
 
   useLayoutEffect(() => {

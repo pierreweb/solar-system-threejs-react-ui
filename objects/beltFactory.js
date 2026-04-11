@@ -47,10 +47,10 @@ export function createBeltObject(obj, preset, deps) {
       Math.random() * Math.PI,
     );
 
-    // const scale = THREE.MathUtils.lerp(0.7, 2.2, Math.random());
-    const scale = THREE.MathUtils.lerp(0.5, 1.16, Math.pow(Math.random(), 1.8));
+    const scale = THREE.MathUtils.lerp(0.7, 2.2, Math.random());
+    //const scale = THREE.MathUtils.lerp(0.5, 1.16, Math.pow(Math.random(), 1.8));
 
-    asteroid.scale.setScalar(100.5);
+    asteroid.scale.setScalar(1.0 * scale);
 
     beltGroup.add(asteroid);
   }
@@ -71,11 +71,26 @@ export function createBeltObject(obj, preset, deps) {
 
 export function createBeltDescriptor(obj) {
   const { innerRadius, outerRadius } = getSimulationBeltVisuals(obj);
+  const asteroidScaleMin =
+    typeof obj.asteroidScaleMin === "number" ? obj.asteroidScaleMin : 0.035;
+  const asteroidScaleMax =
+    typeof obj.asteroidScaleMax === "number" ? obj.asteroidScaleMax : 0.11;
+  const verticalSpreadFactor =
+    typeof obj.verticalSpreadFactor === "number" ? obj.verticalSpreadFactor : 0.22;
+  const radialJitter =
+    typeof obj.radialJitter === "number" ? obj.radialJitter : 0.12;
+  const geometryRadius =
+    typeof obj.geometryRadius === "number" ? obj.geometryRadius : 1;
 
   return {
     ...obj,
     innerRadiusScaled: innerRadius,
     outerRadiusScaled: outerRadius,
     orbitSpeed: getOrbitSpeed(obj.yearDays) * 0.12,
+    asteroidScaleMin,
+    asteroidScaleMax,
+    verticalSpread: (obj.thickness ?? 0) * verticalSpreadFactor,
+    radialJitter,
+    geometryRadius,
   };
 }
