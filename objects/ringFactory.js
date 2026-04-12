@@ -27,7 +27,7 @@ export function createRingObject(obj, preset, deps) {
       ? ringConfig.outerRadius
       : radius * (ringConfig.outerRadiusRelativeToPlanet ?? 2.1);
   const ringTexture = ringConfig.texture
-    ? textureLoader.load(ringConfig.texture)
+    ? textureLoader.load(resolveAssetUrl(ringConfig.texture))
     : null;
 
   const ringMaterial = new THREE.MeshStandardMaterial({

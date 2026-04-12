@@ -24,6 +24,7 @@ import { Scene } from "./components/Scene";
 import { DatePickerModal } from "./components/DatePickerModal";
 import { cn } from "./lib/utils";
 import { getPlanetInfo } from "../data/planetInfodata.js";
+import { resolveAssetUrl } from "../objects/sceneObjectUtils.js";
 import {
   fetchEphemeridesForDate,
   type BodyEphemeris,
@@ -399,12 +400,12 @@ export default function App() {
   const [currentBackgroundIndex, setCurrentBackgroundIndex] = useState(0);
 
   const backgroundImages = [
-    { name: "STARS_2K", url: "/images/sky/2k_stars.jpg" },
-    { name: "NEBULA_40", url: "/images/sky/64040.jpg" },
-    { name: "NEBULA_47", url: "/images/sky/64047.jpg" },
-    { name: "NEBULA_57", url: "/images/sky/64057.jpg" },
-    { name: "GALAXY_83", url: "/images/sky/64183.jpg" },
-    { name: "VOID_98", url: "/images/sky/64198.jpg" },
+    { name: "STARS_2K", url: resolveAssetUrl("/images/sky/2k_stars.jpg") },
+    { name: "NEBULA_40", url: resolveAssetUrl("/images/sky/64040.jpg") },
+    { name: "NEBULA_47", url: resolveAssetUrl("/images/sky/64047.jpg") },
+    { name: "NEBULA_57", url: resolveAssetUrl("/images/sky/64057.jpg") },
+    { name: "GALAXY_83", url: resolveAssetUrl("/images/sky/64183.jpg") },
+    { name: "VOID_98", url: resolveAssetUrl("/images/sky/64198.jpg") },
   ];
 
   const [wasMusicOnBeforeHover, setWasMusicOnBeforeHover] = useState(false);
@@ -471,7 +472,8 @@ export default function App() {
 
   useEffect(() => {
     drawerSoundRef.current = new Audio(
-      "/audio/sounds/mixkit-sci-fi-error-alert-898.wav",
+      resolveAssetUrl("/audio/sounds/mixkit-sci-fi-error-alert-898.wav") ??
+        "/audio/sounds/mixkit-sci-fi-error-alert-898.wav",
     );
     drawerSoundRef.current.volume = 0.5;
   }, []);

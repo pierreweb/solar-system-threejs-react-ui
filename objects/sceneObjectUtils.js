@@ -6,11 +6,43 @@ export const SCENE_RADIUS_SCALE = 0.16;
 export const MIN_BODY_RADIUS = 0.12;
 
 export function resolveAssetUrl(assetPath) {
-  if (!assetPath) return null;
-  if (assetPath.startsWith("/")) return assetPath;
+  if (!assetPath || typeof assetPath !== "string") return null;
 
-  const normalized = assetPath.replace(/^\.\//, "../");
-  return new URL(normalized, import.meta.url).href;
+  const trimmedPath = assetPath.trim();
+  if (!trimmedPath) return null;
+
+  const normalizedSlashes = trimmedPath.replace(/\\/g, "/");
+
+  if (
+    /^(?:[a-z]+:)?\/\//i.test(normalizedSlashes) ||
+    /^(?:data|blob):/i.test(normalizedSlashes)
+  ) {
+    return normalizedSlashes;
+  }
+
+  const baseUrl = import.meta.env.BASE_URL || "/";
+  const normalizedBaseUrl = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const basePathPrefix = normalizedBaseUrl.slice(0, -1);
+
+  if (normalizedSlashes.startsWith(normalizedBaseUrl)) {
+    return normalizedSlashes;
+  }
+
+  if (
+    basePathPrefix &&
+    basePathPrefix !== "/" &&
+    normalizedSlashes.startsWith(basePathPrefix)
+  ) {
+    return normalizedSlashes;
+  }
+
+  const withoutRelativePrefix = normalizedSlashes.replace(
+    /^(?:\.\.?\/)+/,
+    "",
+  );
+
+  const withoutLeadingSlash = withoutRelativePrefix.replace(/^\/+/, "");
+  return `${normalizedBaseUrl}${withoutLeadingSlash}`;
 }
 
 export function getScaledDistance(distance = 0) {

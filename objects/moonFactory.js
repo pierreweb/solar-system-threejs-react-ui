@@ -48,7 +48,7 @@ export function createMoonForEarth(preset, deps) {
   earth.mesh.add(moonOrbit);
 
   const moonTexture = textureLoader.load(
-    moonConfig?.texture ?? "./textures/2k_moon.jpg",
+    resolveAssetUrl(moonConfig?.texture ?? "./textures/2k_moon.jpg"),
   );
   const moonMaterial = new THREE.MeshStandardMaterial({
     map: moonTexture,

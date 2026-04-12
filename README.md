@@ -177,7 +177,7 @@ npm run lint
 
 ## Demo
 
-[Live Demo](https://your-demo-url.com)
+[Live Demo](https://darksalmon-jellyfish-454090.hostingersite.com/systeme_solaire_reactui_threejs/)
 
 ---
 
