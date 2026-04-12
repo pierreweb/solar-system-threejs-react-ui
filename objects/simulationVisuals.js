@@ -7,8 +7,10 @@ const RADIUS_SCALE_CORRECTION = 0.5;
 const DISTANCE_SCALE_CORRECTION = 5.0;
 const MIN_SIM_RADIUS = 0.045;
 const MIN_DISTANCE_FROM_SUN = 3.0; // petite marge visuelle optionnelle
-const MAX_SUN_RADIUS = 8.0;
-const MAX_PLANET_RADIUS = 5.0;
+const MAX_SUN_RADIUS = 5.0;
+const MIN_SUN_RADIUS = 4.0;
+const MAX_PLANET_RADIUS = 3.0;
+const MIN_PLANET_RADIUS = 0.05;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -16,6 +18,13 @@ function clamp(value, min, max) {
 
 function getSunMaxRadius() {
   return MAX_SUN_RADIUS;
+}
+
+function getSunMinRadius() {
+  return MIN_SUN_RADIUS;
+}
+function getPlanetMinRadius() {
+  return MIN_SIM_RADIUS;
 }
 
 function getPlanetMaxRadius() {
@@ -34,7 +43,7 @@ function getResolvedSunRadius() {
   );
 }
 function adaptedScaledRadius(physicalRadiusKm) {
-  const MIN_RADIUS_NORMALIZED = 2440 / 10_000; // Mercury
+  const MIN_RADIUS_NORMALIZED = 2439 / 10_000; // Mercury
   const MAX_RADIUS_NORMALIZED = 696_340 / 10_000; // Sun 69911 jupiter
 
   const normalized = physicalRadiusKm / 10_000;
@@ -44,8 +53,10 @@ function adaptedScaledRadius(physicalRadiusKm) {
     0,
     1,
   );
-  const adaptedRadius = 0.1 + 10 * Math.sqrt(ratio); //Math.log10(1.4 + 20.0 * ratio);
-  //const adaptedRadius = 0.000028093 * normalized + 0.03671;
+  //const adaptedRadius = 0.1 + 10 * Math.sqrt(ratio); //Math.log10(1.4 + 20.0 * ratio);
+  const adaptedRadius =
+    0.05 + 0.8987 * Math.log10(0.1 + physicalRadiusKm) - 2.3541;
+  //const adaptedRadius = 0.000028093 * physicalRadiusKm + 0.03671;
 
   //console.log(`Adapted  radius for ${physicalRadiusKm}: ${adaptedRadius}`);
   return adaptedRadius;
@@ -63,7 +74,7 @@ function adaptedLogScaleDistance(physicalDistanceAu = 0) {
     1,
   );
   const adaptedDistance =
-    getResolvedSunRadius() +
+    getSunMinRadius() +
     MIN_DISTANCE_FROM_SUN +
     DISTANCE_SCALE_CORRECTION * Math.log(2.0 * physicalDistanceAu); //Math.log10(1.4 + 20.0 * ratio);
   //console.log(`Adapted distance for ${physicalDistanceAu} AU: ${adaptedDistance}`);
@@ -83,6 +94,8 @@ export function getSimulationBodyVisuals(body = {}) {
   const maxSimRadius =
     visualRole === "sun" ? getSunMaxRadius() : getPlanetMaxRadius();
   // visualRole === "sun" ? getResolvedSunRadius() : getPlanetMaxRadius();
+  const minSimRadius =
+    visualRole === "sun" ? getSunMinRadius() : getPlanetMinRadius();
 
   const resolvedRadius =
     typeof radius === "number"
@@ -91,7 +104,7 @@ export function getSimulationBodyVisuals(body = {}) {
         ? Math.min(
             maxSimRadius,
             Math.max(
-              MIN_SIM_RADIUS,
+              minSimRadius,
               RADIUS_SCALE_CORRECTION * adaptedScaledRadius(physicalRadiusKm),
             ),
           )
