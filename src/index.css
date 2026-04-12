@@ -55,7 +55,7 @@
   }
 
   .planet-info-header {
-    @apply relative p-8 flex flex-col justify-end min-h-[300px];
+    @apply relative px-8 pt-5 pb-3 flex flex-col justify-start min-h-[208px];
   }
 
   .planet-info-kicker {
@@ -71,7 +71,7 @@
   }
 
   .planet-info-body {
-    @apply px-8 pb-8;
+    @apply px-8 pt-1 pb-8;
   }
 
   .planet-info-empty {

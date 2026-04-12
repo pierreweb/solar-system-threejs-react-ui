@@ -1383,7 +1383,7 @@ export default function App() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
-                    className="space-y-6 py-6"
+                    className="space-y-5 pt-2 pb-6"
                   >
                     {selectedPlanetInfo ? (
                       <>
