@@ -25,9 +25,9 @@ export const LIGHT_PRESETS = {
     moonEmissiveColor: 0x111111,
 
     ringEmissiveBoost: 1.0,
-    ringEmissiveColor: 0xff0000,
-    ringOpacity: 0.95,
-    ringTint: 0xffffff,
+    ringEmissiveColor: 0x333333,
+    ringOpacity: 0.8,
+    ringTint: 0xaa8899,
 
     beltEmissiveBoost: 0.3,
     beltEmissiveColor: 0x443322,
@@ -49,16 +49,16 @@ export const LIGHT_PRESETS = {
     planetEmissiveBoost: 2.0,
     planetEmissiveColor: 0x0000ff,
 
-    dwarfEmissiveBoost: 1.5,
+    dwarfEmissiveBoost: 10.5,
     dwarfEmissiveColor: 0x0000ff,
 
     moonEmissiveBoost: 0.18,
     moonEmissiveColor: 0x222244,
 
     ringEmissiveBoost: 1.6,
-    ringEmissiveColor: 0x3333aa,
-    ringOpacity: 0.98,
-    ringTint: 0xffffff,
+    ringEmissiveColor: 0x0000ff,
+    ringOpacity: 0.9,
+    ringTint: 0x0000ff,
 
     beltEmissiveBoost: 0.08,
     beltEmissiveColor: 0x222244,
@@ -86,10 +86,10 @@ export const LIGHT_PRESETS = {
     moonEmissiveBoost: 0.00001,
     moonEmissiveColor: 0x000000,
 
-    ringEmissiveBoost: 0.5,
+    ringEmissiveBoost: 0.8,
     ringEmissiveColor: 0x332515,
-    ringOpacity: 0.9,
-    ringTint: 0xf4ead0,
+    ringOpacity: 0.8,
+    ringTint: 0x322414,
 
     beltEmissiveBoost: 0.05,
     beltEmissiveColor: 0x221111,

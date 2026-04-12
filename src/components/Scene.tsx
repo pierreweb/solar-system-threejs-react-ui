@@ -8,13 +8,8 @@ import React, {
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-// import { solarObjects } from "../../config/solarObjects.js";
 import { simulationBodyConfigs } from "../../config/simulationBodyConfigs.js";
-import {
-  LIGHT_PRESETS,
-  MOON_ORBIT_DAYS,
-  MOON_ROTATION_DAYS,
-} from "../../config/constants.js";
+import { LIGHT_PRESETS, MOON_ORBIT_DAYS } from "../../config/constants.js";
 import { createBeltDescriptor } from "../../objects/beltFactory.js";
 import { createEarthMoonDescriptor } from "../../objects/moonFactory.js";
 import { createPlanetDescriptor } from "../../objects/planetFactory.js";
@@ -178,30 +173,6 @@ function scaleEphemerisPositionLog(
   return direction.multiplyScalar(scaledRadius);
 }
 
-function getEphemerisOrbitalAngle(x: number, z: number) {
-  return Math.atan2(z, x);
-}
-
-/* function projectEphemerisToScenePlane(
-  x: number,
-  y: number,
-  z: number,
-  options: Parameters<typeof scaleEphemerisPositionLog>[3] = {},
-) {
-  const scaledVector = scaleEphemerisPositionLog(x, y, z, options);
-  const scaledRadius = scaledVector.length();
-  const orbitalAngle = getEphemerisOrbitalAngle(x, z);
-
-  return {
-    orbitalAngle,
-    scaledRadius,
-    position: new THREE.Vector3(
-      Math.cos(orbitalAngle) * scaledRadius,
-      0,
-      -Math.sin(orbitalAngle) * scaledRadius,
-    ),
-  };
-} */
 function projectEphemerisToScenePlane(
   x: number,
   y: number,
@@ -211,20 +182,13 @@ function projectEphemerisToScenePlane(
   const scaled = scaleEphemerisPositionLog(x, y, z, options);
 
   const sceneX = scaled.x;
-  const sceneZ = scaled.z; // test le signe ici
+  const sceneZ = scaled.z;
 
   return {
     orbitalAngle: Math.atan2(sceneZ, sceneX),
     scaledRadius: Math.hypot(sceneX, sceneZ),
     position: new THREE.Vector3(sceneX, 0, sceneZ),
   };
-}
-
-function projectHeliocentricDistanceToSceneRadius(
-  distanceAu: number,
-  options: Parameters<typeof scaleEphemerisPositionLog>[3] = {},
-) {
-  return scaleEphemerisPositionLog(distanceAu, 0, 0, options).length();
 }
 
 function getOrbitalAngleOffset(
@@ -391,7 +355,6 @@ function MoonNode({
   const moonPositionRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const animatedAngleOffsetRef = useRef(0);
 
   const axisHelper = useMemo(
     () => new THREE.AxesHelper(Math.max(moon.radiusScaled * 4, 0.6)),
@@ -410,45 +373,11 @@ function MoonNode({
       )
     : (ephemerisPosition ?? new THREE.Vector3(moon.orbitRadius, 0, 0));
 
-  /*   useFrame((_, delta) => {
-    if (!isPaused) {
-      if (orbitRef.current && !ephemerisOrbit) {
-        orbitRef.current.rotation.y +=
-          delta * animationSpeed * moon.orbitSpeed * 0.1;
-      }
-
-      if (ephemerisOrbit) {
-        animatedAngleOffsetRef.current +=
-          delta * animationSpeed * moon.orbitSpeed * 0.1;
-      }
-    }
-
-    if (meshRef.current) {
-      meshRef.current.rotation.y +=
-        delta * moon.selfRotationSpeed * SELF_ROTATION_VISUAL_SCALE;
-    }
-
-    if (moonPositionRef.current && ephemerisOrbit) {
-      const angle = ephemerisOrbit.baseAngle - animatedAngleOffsetRef.current;
-      moonPositionRef.current.position.set(
-        Math.cos(angle) * ephemerisOrbit.scaledRadius,
-        0,
-        Math.sin(angle) * ephemerisOrbit.scaledRadius,
-      );
-    }
-  }); */
   useFrame((_, delta) => {
     if (!isPaused) {
       if (orbitRef.current && !ephemerisOrbit) {
         orbitRef.current.rotation.y +=
           delta * animationSpeed * moon.orbitSpeed * 0.1;
-      }
-
-      if (ephemerisOrbit) {
-        animatedAngleOffsetRef.current = getOrbitalAngleOffset(
-          elapsedSimDays,
-          MOON_ORBIT_DAYS,
-        );
       }
 
       if (meshRef.current) {
@@ -541,13 +470,19 @@ function RingNode({
       <ringGeometry
         args={[ring.innerRadiusScaled, ring.outerRadiusScaled, ORBIT_SEGMENTS]}
       />
+
       <meshStandardMaterial
         map={texture}
-        alphaMap={texture}
-        color={ring.color ?? lightPresetConfig.ringTint}
+        //alphaMap={texture}//supprimé car sinon trop fade ne pas enlever ce commentaire
+        //alphaTest={0.01} //correction de l'alpha map
+        emissiveMap={texture}
+        // color={ring.color ?? lightPresetConfig.ringTint}
+        color={lightPresetConfig.ringTint ?? ring.color}
         side={THREE.DoubleSide}
         transparent
         opacity={lightPresetConfig.ringOpacity}
+        roughness={1}
+        metalness={0}
         emissive={lightPresetConfig.ringEmissiveColor}
         emissiveIntensity={lightPresetConfig.ringEmissiveBoost}
       />
@@ -598,7 +533,6 @@ function PlanetNode({
   const planetPositionRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const animatedAngleOffsetRef = useRef(0);
 
   const axisHelper = useMemo(
     () => new THREE.AxesHelper(Math.max(planet.radiusScaled * 3, 0.8)),
@@ -618,47 +552,11 @@ function PlanetNode({
       )
     : (ephemerisPosition ?? new THREE.Vector3(visualOrbitRadius, 0, 0));
 
-  /*  useFrame((_, delta) => {
-    if (!isPaused) {
-      if (orbitRef.current && !ephemerisOrbit) {
-        orbitRef.current.rotation.y +=
-          delta * animationSpeed * planet.orbitSpeed * 0.08;
-      }
-
-      if (ephemerisOrbit) {
-        animatedAngleOffsetRef.current +=
-          delta * animationSpeed * planet.orbitSpeed * 0.08;
-      }
-    }
-
-    if (meshRef.current) {
-      meshRef.current.rotation.y +=
-        delta * planet.selfRotationSpeed * SELF_ROTATION_VISUAL_SCALE;
-    }
-
-    if (planetPositionRef.current && ephemerisOrbit) {
-      const angle = ephemerisOrbit.baseAngle - animatedAngleOffsetRef.current;
-      planetPositionRef.current.position.set(
-        Math.cos(angle) * ephemerisOrbit.scaledRadius,
-        0,
-        Math.sin(angle) * ephemerisOrbit.scaledRadius,
-      );
-    }
-  });
- */
-
   useFrame((_, delta) => {
     if (!isPaused) {
       if (orbitRef.current && !ephemerisOrbit) {
         orbitRef.current.rotation.y +=
           delta * animationSpeed * planet.orbitSpeed * 0.08;
-      }
-
-      if (ephemerisOrbit) {
-        animatedAngleOffsetRef.current = getOrbitalAngleOffset(
-          elapsedSimDays,
-          planet.yearDays ?? 365.25,
-        );
       }
 
       if (meshRef.current) {
@@ -742,7 +640,6 @@ function PlanetNode({
               {showAxis && <primitive object={axisHelper} />}
             </mesh>
 
-            {/* {ring && <RingNode ring={ring} />} */}
             {ring && (
               <RingNode ring={ring} lightPresetConfig={lightPresetConfig} />
             )}
@@ -784,13 +681,11 @@ function AsteroidBeltNode({
   animationSpeed,
   isPaused,
   lightPresetConfig,
-  // hovered,
 }: {
   belt: BeltRenderModel;
   animationSpeed: number;
   isPaused: boolean;
   lightPresetConfig: (typeof LIGHT_PRESETS)["normal"];
-  // hovered: boolean;
 }) {
   const beltRef = useRef<THREE.Group>(null);
   const instancesRef = useRef<THREE.InstancedMesh>(null);
@@ -876,18 +771,8 @@ function AsteroidBeltNode({
           color={belt.color}
           roughness={0.95}
           metalness={0.02}
-          // emissive={0x18130d}
-          // emissiveIntensity={0.14}
           emissive={lightPresetConfig.beltEmissiveColor}
           emissiveIntensity={lightPresetConfig.beltEmissiveBoost}
-          /*       emissive={
-                  hovered ? belt.color : lightPresetConfig.beltEmissiveColor
-                }
-                emissiveIntensity={
-                  hovered
-                    ? lightPresetConfig.beltEmissiveBoost + 0.14
-                    : lightPresetConfig.beltEmissiveBoost
-                } */
         />
       </instancedMesh>
     </group>
@@ -929,9 +814,18 @@ export const Scene: React.FC<SceneProps> = ({
       .filter((obj) => obj.kind === "planet" || obj.kind === "dwarf")
       .map((obj) => createPlanetDescriptor(obj)) as PlanetRenderModel[];
 
-    const rings = simulationBodyConfigs
+    /*    const rings = simulationBodyConfigs
       .filter((obj) => obj.kind === "ring")
+      .map((obj) => createRingDescriptor(obj)) as RingRenderModel[]; */
+
+    const rings = simulationBodyConfigs
+      .filter(
+        (obj) =>
+          (obj.kind === "planet" || obj.kind === "dwarf") && obj.rings?.enabled,
+      )
       .map((obj) => createRingDescriptor(obj)) as RingRenderModel[];
+
+    //console.log("RINGS", rings);
 
     const belt = simulationBodyConfigs
       .filter((obj) => obj.kind === "belt")
@@ -955,19 +849,6 @@ export const Scene: React.FC<SceneProps> = ({
 
     return { sun, planets, belt, ringByParent, moonByParent };
   }, []);
-  // console.log("BELT MODEL", sceneModel.belt);
-  /*  const projectedAsteroidBeltRadii = useMemo(() => {
-    return {
-      inner: projectHeliocentricDistanceToSceneRadius(
-        ASTEROID_BELT_AU_RANGE.inner,
-        EPHEMERIS_LOG_SCALE_OPTIONS,
-      ),
-      outer: projectHeliocentricDistanceToSceneRadius(
-        ASTEROID_BELT_AU_RANGE.outer,
-        EPHEMERIS_LOG_SCALE_OPTIONS,
-      ),
-    };
-  }, []); */
   const projectedEphemerides = useMemo(() => {
     const entries = SUPPORTED_EPHEMERIS_PLANET_NAMES.flatMap((bodyName) => {
       const entry = ephemerides?.[bodyName];
@@ -982,17 +863,6 @@ export const Scene: React.FC<SceneProps> = ({
         z,
         EPHEMERIS_LOG_SCALE_OPTIONS,
       );
-
-      /*  console.log("[ephemeris-apply]", {
-        bodyName,
-        raw: { x, y, z },
-        orbitalAngle: projected.orbitalAngle,
-        finalScenePosition: {
-          x: projected.position.x,
-          y: projected.position.y,
-          z: projected.position.z,
-        },
-      }); */
 
       return [[bodyName, projected] as const];
     });
@@ -1157,29 +1027,14 @@ export const Scene: React.FC<SceneProps> = ({
         onSelect={onPlanetSelect}
       />
 
-      {
-        /* sceneModel.belt && (
+      {sceneModel.belt && (
         <AsteroidBeltNode
-          belt={{
-            ...sceneModel.belt,
-            innerRadiusScaled: projectedAsteroidBeltRadii.inner,
-            outerRadiusScaled: projectedAsteroidBeltRadii.outer,
-          }}
+          belt={sceneModel.belt}
           animationSpeed={animationSpeed}
           isPaused={isPaused}
           lightPresetConfig={activeLightPreset}
-          // hovered={asteroidHovered}
         />
-      ) */
-        sceneModel.belt && (
-          <AsteroidBeltNode
-            belt={sceneModel.belt}
-            animationSpeed={animationSpeed}
-            isPaused={isPaused}
-            lightPresetConfig={activeLightPreset}
-          />
-        )
-      }
+      )}
 
       {sceneModel.planets.map((planet) => (
         <PlanetNode
@@ -1226,7 +1081,6 @@ export const Scene: React.FC<SceneProps> = ({
 
       {showAxis && <primitive object={axisHelper} />}
 
-      {/* <OrbitControls enablePan={false} minDistance={8} maxDistance={60} /> */}
       <OrbitControls enablePan={true} minDistance={8} maxDistance={100} />
     </>
   );

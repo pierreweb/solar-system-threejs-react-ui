@@ -104,19 +104,7 @@ export const simulationBodyConfigs = [
     hasOrbitRing: true,
     hasLabel: true,
   },
-  /*   {
-    name: "Asteroid Belt",
-    kind: "belt",
-    visualRole: "belt",
-    innerRadius: 47,
-    outerRadius: 58,
-    thickness: 1.8,
-    count: 900,
-    yearDays: 1800,
-    color: 0x8f8476,
-    hasOrbitRing: false,
-    hasLabel: false,
-  }, */
+
   {
     name: "Asteroid Belt",
     kind: "belt",
@@ -181,7 +169,7 @@ export const simulationBodyConfigs = [
       innerRadiusRelativeToPlanet: 1.3,
       outerRadiusRelativeToPlanet: 2.1,
       texture: "./textures/saturn_small_ring_tex.png",
-      color: 0xffffff,
+      color: 0x443828,
     },
     yearDays: 10747,
     dayHours: 10.7,
