@@ -75,9 +75,10 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
     : ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
   const years = Array.from({ length: 201 }, (_, i) => 1900 + i); // 1900 to 2100
-  const seasonalShortcutEntries = Object.entries(
-    SEASONAL_SHORTCUT_CONFIG,
-  ) as [SeasonalShortcutKey, (typeof SEASONAL_SHORTCUT_CONFIG)[SeasonalShortcutKey]][];
+  const seasonalShortcutRows: SeasonalShortcutKey[][] = [
+    ['springEquinox', 'autumnEquinox'],
+    ['summerSolstice', 'winterSolstice'],
+  ];
 
   const applySelectedDate = (date: Date) => {
     onSelect(date);
@@ -127,7 +128,7 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
                 isDark ? "text-gold-neon neon-text-gold" : "text-mist-primary"
               )}>
                 <CalendarIcon size={20} />
-                {language === 'EN' ? 'Date Observation' : 'Date d\'observation'}
+                {language === 'FR' ? 'Date d’observation' : 'Observation Date'}
               </h3>
               <button 
                 onClick={onClose}
@@ -168,39 +169,6 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
                 {currentDate.getFullYear()}
                 <ChevronDown size={14} className={isDark ? "text-gold-neon" : "text-mist-primary"} />
               </button>
-            </div>
-
-            <div className="mb-4">
-              <p
-                className={cn(
-                  "mb-2 text-[10px] font-bold tracking-widest uppercase opacity-60",
-                )}
-              >
-                {language === 'EN' ? 'Seasonal Shortcuts' : 'Raccourcis saisonniers'}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {seasonalShortcutEntries.map(([seasonKey, seasonConfig]) => (
-                  <button
-                    key={seasonKey}
-                    onClick={() => {
-                      const seasonalDate = getSeasonalShortcutDate(
-                        seasonKey,
-                        currentDate.getFullYear(),
-                      );
-                      setCurrentDate(seasonalDate);
-                      applySelectedDate(seasonalDate);
-                    }}
-                    className={cn(
-                      "rounded-full border px-3 py-1.5 text-[10px] font-bold tracking-wide transition-all",
-                      isDark
-                        ? "border-white/10 text-white/75 hover:border-gold-neon/50 hover:text-gold-neon hover:bg-white/5"
-                        : "border-black/10 text-black/75 hover:border-mist-primary/50 hover:text-mist-primary hover:bg-black/5",
-                    )}
-                  >
-                    {seasonConfig.label[language]}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {/* Scrollers (Conditional) */}
@@ -291,6 +259,40 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({ isOpen, onClos
                 ))}
               </motion.div>
             )}
+
+            <div className="mt-4">
+              <div className="space-y-2">
+                {seasonalShortcutRows.map((row, rowIndex) => (
+                  <div key={rowIndex} className="flex gap-2">
+                    {row.map((seasonKey) => {
+                      const seasonConfig = SEASONAL_SHORTCUT_CONFIG[seasonKey];
+
+                      return (
+                        <button
+                          key={seasonKey}
+                          onClick={() => {
+                            const seasonalDate = getSeasonalShortcutDate(
+                              seasonKey,
+                              currentDate.getFullYear(),
+                            );
+                            setCurrentDate(seasonalDate);
+                            applySelectedDate(seasonalDate);
+                          }}
+                          className={cn(
+                            "flex-1 whitespace-nowrap rounded-full border px-3 py-1.5 text-[10px] font-bold tracking-wide transition-all",
+                            isDark
+                              ? "border-white/10 text-white/75 hover:border-gold-neon/50 hover:text-gold-neon hover:bg-white/5"
+                              : "border-black/10 text-black/75 hover:border-mist-primary/50 hover:text-mist-primary hover:bg-black/5",
+                          )}
+                        >
+                          {seasonConfig.label[language]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div className="mt-6 flex items-center justify-between gap-3">
               <button 
