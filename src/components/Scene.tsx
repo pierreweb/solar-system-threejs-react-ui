@@ -33,7 +33,7 @@ interface SceneProps {
   animationSpeed: number;
   isPaused: boolean;
   isDark: boolean;
-  backgroundUrl: string;
+  backgroundUrl?: string | null;
   backgroundOpacity: number;
   lightPreset: "normal" | "cinematic" | "boost";
 }
@@ -271,8 +271,13 @@ function SunNode({
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  const texture = useTexture(
+  /*   const texture = useTexture(
     sun.textureUrl || resolveAssetUrl("./textures/2k_sun.jpg"),
+  ) as THREE.Texture; */
+  const texture = useTexture(
+    sun.textureUrl ??
+      resolveAssetUrl("./textures/2k_sun.jpg") ??
+      "/textures/2k_sun.jpg",
   ) as THREE.Texture;
 
   useFrame((_, delta) => {
@@ -361,8 +366,13 @@ function MoonNode({
     [moon.radiusScaled],
   );
 
-  const texture = useTexture(
+  /*   const texture = useTexture(
     moon.textureUrl || resolveAssetUrl("./textures/2k_moon.jpg"),
+  ) as THREE.Texture; */
+  const texture = useTexture(
+    moon.textureUrl ??
+      resolveAssetUrl("./textures/2k_moon.jpg") ??
+      "/textures/2k_moon.jpg",
   ) as THREE.Texture;
   const moonPosition = ephemerisOrbit
     ? getProjectedOrbitPosition(
@@ -461,8 +471,13 @@ function RingNode({
   ring: RingRenderModel;
   lightPresetConfig: (typeof LIGHT_PRESETS)["normal"];
 }) {
-  const texture = useTexture(
+  /*   const texture = useTexture(
     ring.textureUrl || resolveAssetUrl("./textures/saturn_small_ring_tex.png"),
+  ) as THREE.Texture; */
+  const texture = useTexture(
+    ring.textureUrl ??
+      resolveAssetUrl("./textures/saturn_small_ring_tex.png") ??
+      "/textures/saturn_small_ring_tex.png",
   ) as THREE.Texture;
 
   return (
@@ -539,8 +554,13 @@ function PlanetNode({
     [planet.radiusScaled],
   );
 
-  const texture = useTexture(
+  /*   const texture = useTexture(
     planet.textureUrl || resolveAssetUrl("./textures/2k_mercury.jpg"),
+  ) as THREE.Texture; */
+  const texture = useTexture(
+    planet.textureUrl ??
+      resolveAssetUrl("./textures/2k_mercury.jpg") ??
+      "/textures/2k_mercury.jpg",
   ) as THREE.Texture;
   const visualOrbitRadius = orbitRadiusOverride ?? planet.orbitRadius;
   const planetPosition = ephemerisOrbit
@@ -796,8 +816,14 @@ export const Scene: React.FC<SceneProps> = ({
 }) => {
   const axisHelper = useMemo(() => new THREE.AxesHelper(5), []);
 
-  const backgroundTexture = useTexture(
+  /*   const backgroundTexture = useTexture(
     backgroundUrl || resolveAssetUrl("./textures/sky/2k_stars.jpg"),
+  ) as THREE.Texture; */
+
+  const backgroundTexture = useTexture(
+    backgroundUrl ??
+      resolveAssetUrl("./textures/sky/2k_stars.jpg") ??
+      "/textures/sky/2k_stars.jpg",
   ) as THREE.Texture;
   const activeLightPreset = LIGHT_PRESETS[lightPreset] ?? LIGHT_PRESETS.normal;
   const sceneModel = useMemo(() => {

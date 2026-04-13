@@ -3,7 +3,7 @@
 @theme {
   --color-gold-neon: #ffd700;
   --color-gold-muted: #b8860b;
-  
+
   /* Ginkgo Mist Palette */
   --color-mist-primary: #795a19;
   --color-mist-bg: #fef9f0;
@@ -25,7 +25,12 @@
 }
 
 @utility watercolor-mist {
-  background: radial-gradient(circle at center, rgba(254, 249, 240, 0) 0%, rgba(254, 249, 240, 0.8) 70%, rgba(254, 249, 240, 1) 100%);
+  background: radial-gradient(
+    circle at center,
+    rgba(254, 249, 240, 0) 0%,
+    rgba(254, 249, 240, 0.8) 70%,
+    rgba(254, 249, 240, 1) 100%
+  );
 }
 
 @layer utilities {
@@ -36,9 +41,14 @@
   .light .glass-panel {
     @apply bg-white/40 backdrop-blur-xl border-black/5 shadow-xl;
   }
-  
+
   .dark .watercolor-mist {
-    background: radial-gradient(circle at center, rgba(5, 5, 5, 0) 0%, rgba(5, 5, 5, 0.8) 70%, rgba(5, 5, 5, 1) 100%);
+    background: radial-gradient(
+      circle at center,
+      rgba(5, 5, 5, 0) 0%,
+      rgba(5, 5, 5, 0.8) 70%,
+      rgba(5, 5, 5, 1) 100%
+    );
   }
 
   /* Planet Info Drawer Styles */
@@ -55,7 +65,7 @@
   }
 
   .planet-info-header {
-    @apply relative px-8 pt-5 pb-3 flex flex-col justify-start min-h-[208px];
+    @apply relative px-8 pt-5 pb-3 flex flex-col justify-start min-h-[168px];
   }
 
   .planet-info-kicker {
@@ -78,13 +88,30 @@
     @apply py-12 text-center opacity-40 italic font-light tracking-widest;
   }
 
-  .dark .planet-info-kicker { @apply text-gold-neon; }
-  .light .planet-info-kicker { @apply text-mist-primary; }
+  /*   .dark .planet-info-stat-label {
+    @apply text-blue-600;
+  }
+  .light .planet-info-stat-label {
+    color: #37ff00;
+  }
+  .dark .planet-info-stat-value {
+    color: #e301f4;
+  }
+  .light .planet-info-stat-value {
+    @apply text-blue-500;
+  } */
+
+  .dark .planet-info-kicker {
+    @apply text-gold-neon;
+  }
+  .light .planet-info-kicker {
+    @apply text-mist-primary;
+  }
 }
 
 body {
   @apply transition-colors duration-500 antialiased;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 .dark body {

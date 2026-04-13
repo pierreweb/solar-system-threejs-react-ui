@@ -656,7 +656,7 @@ export default function App() {
         isDark ? "bg-[#050505]" : "bg-mist-bg",
       )}
     >
-      <div className="absolute inset-0 watercolor-mist pointer-events-none z-[1]" />
+      <div className="absolute inset-0 watercolor-mist pointer-events-none z-1" />
 
       <div className="absolute inset-0 z-0">
         <Canvas
@@ -873,9 +873,7 @@ export default function App() {
               </div>
             </div>
 
-            <div
-              className={cn("h-[1px]", isDark ? "bg-white/5" : "bg-black/5")}
-            />
+            <div className={cn("h-px", isDark ? "bg-white/5" : "bg-black/5")} />
 
             <div className="space-y-3">
               <ControlToggle
@@ -898,9 +896,7 @@ export default function App() {
               />
             </div>
 
-            <div
-              className={cn("h-[1px]", isDark ? "bg-white/5" : "bg-black/5")}
-            />
+            <div className={cn("h-px", isDark ? "bg-white/5" : "bg-black/5")} />
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -1394,22 +1390,18 @@ export default function App() {
                             <div key={field.key} className="space-y-1">
                               <p
                                 className={cn(
-                                  "text-[8px] font-bold tracking-widest uppercase",
-                                  isDark ? "text-white/40" : "text-black/40",
+                                  "text-[12px] font-bold tracking-widest uppercase",
+                                  isDark ? "text-white/60" : "text-black/60",
                                 )}
                               >
                                 {field.label}
                               </p>
+
                               <p
                                 className={cn(
-                                  "text-sm font-mono",
-                                  field.key === "rotationPeriod"
-                                    ? isDark
-                                      ? "text-gold-neon"
-                                      : "text-mist-primary"
-                                    : isDark
-                                      ? "text-white"
-                                      : "text-black",
+                                  // "text-[12px] font-bold tracking-widest uppercase",
+                                  "text-[14px] font-mono tracking-wide",
+                                  isDark ? "text-white" : "text-black",
                                 )}
                               >
                                 {getLocalizedPlanetText(
@@ -1420,11 +1412,12 @@ export default function App() {
                                   language,
                                 )}
                               </p>
+
                               {field.comparison && (
                                 <p
                                   className={cn(
-                                    "text-[10px] font-mono tracking-wide",
-                                    isDark ? "text-white/45" : "text-black/45",
+                                    "text-[14px] font-mono tracking-wide",
+                                    isDark ? "text-blue-200" : "text-black/65",
                                   )}
                                 >
                                   {field.comparison}
@@ -1433,8 +1426,8 @@ export default function App() {
                               {field.extra && (
                                 <p
                                   className={cn(
-                                    "text-[10px] font-mono tracking-wide",
-                                    isDark ? "text-white/35" : "text-black/35",
+                                    "text-[12px] font-mono tracking-wide",
+                                    isDark ? "text-white/75" : "text-black/75",
                                   )}
                                 >
                                   {field.extra}
