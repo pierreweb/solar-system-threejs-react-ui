@@ -90,6 +90,73 @@ const planetDrawerTranslations = {
   },
 } as const;
 
+const missionControlTranslations = {
+  EN: {
+    title: "MISSION CONTROL",
+    audioTrack: "AUDIO TRACK",
+    systemAudio: "SYSTEM AUDIO",
+    orbitPath: "ORBIT PATH",
+    axialGuides: "AXIAL GUIDE",
+    dataLabels: "PLANET LABEL",
+    temporalFlux: "TEMPORAL FLUX",
+    resume: "RESUME",
+    pause: "PAUSE",
+    skyBackground: "SKY BACKGROUND",
+    backgroundOpacity: "BACKGROUND OPACITY",
+    illumination: "ILLUMINATION",
+    scientific: "SCIENTIFIC",
+    cinematic: "CINEMATIC",
+    boost: "BOOST",
+    musicTracks: {
+      ambientVoid: "AMBIENT VOID",
+      cosmicDrift: "COSMIC DRIFT",
+      stellarWind: "STELLAR WIND",
+      nebulaMist: "NEBULA MIST",
+      deepSpace: "DEEP SPACE",
+    },
+    backgrounds: {
+      stars2k: "STARS 2K",
+      nebula40: "NEBULA 40",
+      nebula47: "NEBULA 47",
+      nebula57: "NEBULA 57",
+      galaxy83: "GALAXY 83",
+      void98: "VOID 98",
+    },
+  },
+  FR: {
+    title: "CONTRÔLE MISSION",
+    audioTrack: "PISTE AUDIO",
+    systemAudio: "SON",
+    orbitPath: "ORBITES",
+    axialGuides: "AXES DE ROTATION",
+    dataLabels: "NOM PLANÈTE",
+    temporalFlux: "FLUX TEMPOREL",
+    resume: "LECTURE",
+    pause: "PAUSE",
+    skyBackground: "FOND CÉLESTE",
+    backgroundOpacity: "OPACITÉ DU FOND",
+    illumination: "ÉCLAIRAGE",
+    scientific: "SCIENTIFIQUE",
+    cinematic: "CINÉMATIQUE",
+    boost: "BOOST",
+    musicTracks: {
+      ambientVoid: "VIDE AMBIANT",
+      cosmicDrift: "DÉRIVE COSMIQUE",
+      stellarWind: "VENT STELLAIRE",
+      nebulaMist: "BRUME NÉBULEUSE",
+      deepSpace: "ESPACE PROFOND",
+    },
+    backgrounds: {
+      stars2k: "ÉTOILES 2K",
+      nebula40: "NÉBULEUSE 40",
+      nebula47: "NÉBULEUSE 47",
+      nebula57: "NÉBULEUSE 57",
+      galaxy83: "GALAXIE 83",
+      void98: "VIDE 98",
+    },
+  },
+} as const;
+
 const EPHEMERIS_BODY_NAMES: SupportedEphemerisBodyName[] = [
   "Mercury",
   "Venus",
@@ -400,12 +467,48 @@ export default function App() {
   const [currentBackgroundIndex, setCurrentBackgroundIndex] = useState(0);
 
   const backgroundImages = [
-    { name: "STARS_2K", url: resolveAssetUrl("/images/sky/2k_stars.jpg") },
-    { name: "NEBULA_40", url: resolveAssetUrl("/images/sky/64040.jpg") },
-    { name: "NEBULA_47", url: resolveAssetUrl("/images/sky/64047.jpg") },
-    { name: "NEBULA_57", url: resolveAssetUrl("/images/sky/64057.jpg") },
-    { name: "GALAXY_83", url: resolveAssetUrl("/images/sky/64183.jpg") },
-    { name: "VOID_98", url: resolveAssetUrl("/images/sky/64198.jpg") },
+    {
+      name: {
+        EN: missionControlTranslations.EN.backgrounds.stars2k,
+        FR: missionControlTranslations.FR.backgrounds.stars2k,
+      },
+      url: resolveAssetUrl("/images/sky/2k_stars.jpg"),
+    },
+    {
+      name: {
+        EN: missionControlTranslations.EN.backgrounds.nebula40,
+        FR: missionControlTranslations.FR.backgrounds.nebula40,
+      },
+      url: resolveAssetUrl("/images/sky/64040.jpg"),
+    },
+    {
+      name: {
+        EN: missionControlTranslations.EN.backgrounds.nebula47,
+        FR: missionControlTranslations.FR.backgrounds.nebula47,
+      },
+      url: resolveAssetUrl("/images/sky/64047.jpg"),
+    },
+    {
+      name: {
+        EN: missionControlTranslations.EN.backgrounds.nebula57,
+        FR: missionControlTranslations.FR.backgrounds.nebula57,
+      },
+      url: resolveAssetUrl("/images/sky/64057.jpg"),
+    },
+    {
+      name: {
+        EN: missionControlTranslations.EN.backgrounds.galaxy83,
+        FR: missionControlTranslations.FR.backgrounds.galaxy83,
+      },
+      url: resolveAssetUrl("/images/sky/64183.jpg"),
+    },
+    {
+      name: {
+        EN: missionControlTranslations.EN.backgrounds.void98,
+        FR: missionControlTranslations.FR.backgrounds.void98,
+      },
+      url: resolveAssetUrl("/images/sky/64198.jpg"),
+    },
   ];
 
   const [wasMusicOnBeforeHover, setWasMusicOnBeforeHover] = useState(false);
@@ -413,23 +516,38 @@ export default function App() {
 
   const musicTracks = [
     {
-      name: "AMBIENT_VOID",
+      name: {
+        EN: missionControlTranslations.EN.musicTracks.ambientVoid,
+        FR: missionControlTranslations.FR.musicTracks.ambientVoid,
+      },
       url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
     },
     {
-      name: "COSMIC_DRIFT",
+      name: {
+        EN: missionControlTranslations.EN.musicTracks.cosmicDrift,
+        FR: missionControlTranslations.FR.musicTracks.cosmicDrift,
+      },
       url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
     },
     {
-      name: "STELLAR_WIND",
+      name: {
+        EN: missionControlTranslations.EN.musicTracks.stellarWind,
+        FR: missionControlTranslations.FR.musicTracks.stellarWind,
+      },
       url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
     },
     {
-      name: "NEBULA_MIST",
+      name: {
+        EN: missionControlTranslations.EN.musicTracks.nebulaMist,
+        FR: missionControlTranslations.FR.musicTracks.nebulaMist,
+      },
       url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
     },
     {
-      name: "DEEP_SPACE",
+      name: {
+        EN: missionControlTranslations.EN.musicTracks.deepSpace,
+        FR: missionControlTranslations.FR.musicTracks.deepSpace,
+      },
       url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
     },
   ];
@@ -603,6 +721,7 @@ export default function App() {
     : null;
 
   const drawerCopy = planetDrawerTranslations[language];
+  const missionControlCopy = missionControlTranslations[language];
 
   const closeInspector = () => {
     setIsInspectorOpen(false);
@@ -751,7 +870,7 @@ export default function App() {
                 size={16}
                 className={isDark ? "text-gold-neon" : "text-mist-primary"}
               />
-              MISSION_CONTROL
+              {missionControlCopy.title}
             </h2>
             <Settings
               size={16}
@@ -784,7 +903,7 @@ export default function App() {
                         isDark ? "text-white/40" : "text-black/40",
                       )}
                     >
-                      AUDIO_TRACK
+                      {missionControlCopy.audioTrack}
                     </span>
                   </div>
                   <span
@@ -793,7 +912,10 @@ export default function App() {
                       isDark ? "text-gold-neon" : "text-mist-primary",
                     )}
                   >
-                    {musicTracks[currentMusicIndex].name}
+                    {getLocalizedPlanetText(
+                      musicTracks[currentMusicIndex].name,
+                      language,
+                    )}
                   </span>
                 </div>
                 <div className="flex gap-1">
@@ -837,7 +959,7 @@ export default function App() {
                       isDark ? "text-white/40" : "text-black/40",
                     )}
                   >
-                    SYSTEM_AUDIO
+                    {missionControlCopy.systemAudio}
                   </span>
                 </div>
                 <div
@@ -877,19 +999,19 @@ export default function App() {
 
             <div className="space-y-3">
               <ControlToggle
-                label="ORBIT_PATH"
+                label={missionControlCopy.orbitPath}
                 active={showOrbits}
                 onClick={() => setShowOrbits(!showOrbits)}
                 isDark={isDark}
               />
               <ControlToggle
-                label="AXIAL_GUIDES"
+                label={missionControlCopy.axialGuides}
                 active={showAxis}
                 onClick={() => setShowAxis(!showAxis)}
                 isDark={isDark}
               />
               <ControlToggle
-                label="DATA_LABELS"
+                label={missionControlCopy.dataLabels}
                 active={showLabels}
                 onClick={() => setShowLabels(!showLabels)}
                 isDark={isDark}
@@ -906,7 +1028,7 @@ export default function App() {
                     isDark ? "text-white/40" : "text-black/40",
                   )}
                 >
-                  TEMPORAL_FLUX
+                    {missionControlCopy.temporalFlux}
                 </span>
                 <span
                   className={cn(
@@ -950,7 +1072,7 @@ export default function App() {
                   ) : (
                     <Pause size={14} fill="currentColor" />
                   )}
-                  {isPaused ? "RESUME" : "PAUSE"}
+                  {isPaused ? missionControlCopy.resume : missionControlCopy.pause}
                 </button>
               </div>
             </div>
@@ -971,7 +1093,7 @@ export default function App() {
                         isDark ? "text-white/40" : "text-black/40",
                       )}
                     >
-                      SKY_BACKGROUND
+                      {missionControlCopy.skyBackground}
                     </span>
                   </div>
                   <span
@@ -980,7 +1102,10 @@ export default function App() {
                       isDark ? "text-gold-neon" : "text-mist-primary",
                     )}
                   >
-                    {backgroundImages[currentBackgroundIndex].name}
+                    {getLocalizedPlanetText(
+                      backgroundImages[currentBackgroundIndex].name,
+                      language,
+                    )}
                   </span>
                 </div>
                 <div className="flex gap-1">
@@ -1011,7 +1136,7 @@ export default function App() {
                       isDark ? "text-white/40" : "text-black/40",
                     )}
                   >
-                    BACKGROUND_OPACITY
+                    {missionControlCopy.backgroundOpacity}
                   </span>
                   <span
                     className={cn(
@@ -1048,7 +1173,7 @@ export default function App() {
                   isDark ? "text-white/40" : "text-black/40",
                 )}
               >
-                ILLUMINATION
+                {missionControlCopy.illumination}
               </span>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -1064,7 +1189,7 @@ export default function App() {
                         : "border-black/5 bg-black/5 text-black/40",
                   )}
                 >
-                  <Moon size={12} /> SCIENTIFIC
+                  <Moon size={12} /> {missionControlCopy.scientific}
                 </button>
                 <button
                   onClick={() => setLightPreset("cinematic")}
@@ -1079,7 +1204,7 @@ export default function App() {
                         : "border-black/5 bg-black/5 text-black/40",
                   )}
                 >
-                  <Sun size={12} /> CINEMATIC
+                  <Sun size={12} /> {missionControlCopy.cinematic}
                 </button>
                 <button
                   onClick={() => setLightPreset("boost")}
@@ -1094,7 +1219,7 @@ export default function App() {
                         : "border-black/5 bg-black/5 text-black/40",
                   )}
                 >
-                  <Sun size={12} /> BOOST
+                  <Sun size={12} /> {missionControlCopy.boost}
                 </button>
               </div>
             </div>
