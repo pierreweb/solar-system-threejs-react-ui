@@ -6,7 +6,12 @@ import React, {
   useState,
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Stars, useTexture } from "@react-three/drei";
+import {
+  OrbitControls,
+  Stars,
+  useTexture,
+  useVideoTexture,
+} from "@react-three/drei";
 import * as THREE from "three";
 import { simulationBodyConfigs } from "../../config/simulationBodyConfigs.js";
 import { LIGHT_PRESETS, MOON_ORBIT_DAYS } from "../../config/constants.js";
@@ -21,6 +26,8 @@ import type {
   SupportedEphemerisBodyName,
 } from "../services/ephemerisService";
 import { SolarLabel } from "./SolarLabel";
+
+import { SunMaterial } from "../components/SunMaterial";
 
 interface SceneProps {
   onPlanetSelect: (planetName: string) => void;
@@ -47,6 +54,7 @@ interface PlanetRenderModel {
   orbitSpeed: number;
   selfRotationSpeed: number;
   tiltRad: number;
+  orbitalInclinationRad: number;
   textureUrl?: string | null;
 }
 
@@ -95,6 +103,7 @@ interface SunRenderModel {
 
 const ORBIT_SEGMENTS = 128;
 const SELF_ROTATION_VISUAL_SCALE = 6;
+const seasonOffsetRad = +Math.PI / 2;
 
 const EPHEMERIS_LOG_SCALE_OPTIONS = {
   minRadius: 5,
@@ -254,6 +263,7 @@ function CameraSetup() {
 
 function SunNode({
   sun,
+  // sunMeshRef,
   language,
   showLabels,
   isDark,
@@ -262,6 +272,7 @@ function SunNode({
   onSelect,
 }: {
   sun: SunRenderModel;
+  // sunMeshRef: React.MutableRefObject<THREE.Mesh | null>;
   language: "EN" | "FR";
   showLabels: boolean;
   isDark: boolean;
@@ -280,6 +291,34 @@ function SunNode({
       "/textures/2k_sun.jpg",
   ) as THREE.Texture;
 
+  /*  const video = useMemo(() => {
+    const v = document.createElement("video");
+    v.src =
+      resolveAssetUrl("./textures/Sun Texture Video Footage.mp4") ??
+      "/textures/Sun Texture Video Footage.mp4";
+    v.crossOrigin = "anonymous";
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    v.autoplay = true;
+    v.playbackRate = 0.5; // ralenti ici
+    return v;
+  }, []);
+
+  const videoTexture = useMemo(() => {
+    const tex = new THREE.VideoTexture(video);
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }, [video]);
+
+  useEffect(() => {
+    video.play().catch(() => {});
+    return () => {
+      video.pause();
+    };
+  }, [video]); */
+
   useFrame((_, delta) => {
     if (isPaused || !meshRef.current) return;
     meshRef.current.rotation.y += delta * animationSpeed * sun.rotationSpeed;
@@ -288,7 +327,10 @@ function SunNode({
   return (
     <>
       <mesh
-        ref={meshRef}
+        ref={(node) => {
+          meshRef.current = node;
+          // sunMeshRef.current = node;
+        }}
         scale={hovered ? 1.04 : 1}
         onClick={(event) => {
           event.stopPropagation();
@@ -303,9 +345,28 @@ function SunNode({
           document.body.style.cursor = "auto";
         }}
       >
-        <sphereGeometry args={[sun.radiusScaled, 48, 48]} />
-        <meshBasicMaterial map={texture} color="#ffffff" />
+        {/* <sphereGeometry args={[sun.radiusScaled, 48, 48]} />
+        <meshBasicMaterial map={texture} color="#ffffff" /> */}
+
+        <sphereGeometry args={[sun.radiusScaled, 96, 96]} />
+
+        {/*   <meshBasicMaterial
+          map={texture}
+          transparent
+          opacity={0.6}
+          //NoBlending | NormalBlending | AdditiveBlending | SubtractiveBlending | MultiplyBlending | CustomBlending | MaterialBlending
+          blending={THREE.NormalBlending}
+          depthWrite={true}
+        /> */}
+
+        <SunMaterial map={texture} />
       </mesh>
+      {/* 
+      <mesh scale={0.99}>
+        <sphereGeometry args={[sun.radiusScaled, 96, 96]} />
+        <meshBasicMaterial map={texture} color="#ffffff" />
+         <SunMaterial map={texture} plasmaStrength={0.98} /> 
+      </mesh> */}
 
       <mesh>
         <sphereGeometry args={[sun.haloRadiusScaled, 32, 32]} />
@@ -507,6 +568,8 @@ function RingNode({
 
 function PlanetNode({
   planet,
+  // sunMeshRef,
+  //sunOcclusionReady,
   ring,
   moon,
   language,
@@ -526,6 +589,8 @@ function PlanetNode({
   onSelect,
 }: {
   planet: PlanetRenderModel;
+  //sunMeshRef: React.MutableRefObject<THREE.Mesh | null>;
+  // sunOcclusionReady: boolean;
   ring?: RingRenderModel;
   moon?: MoonRenderModel;
   language: "EN" | "FR";
@@ -601,7 +666,9 @@ function PlanetNode({
   return (
     <>
       {showOrbits && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          rotation={[-Math.PI / 2 + (planet.orbitalInclinationRad ?? 0), 0, 0]}
+        >
           <ringGeometry
             args={[
               visualOrbitRadius - 0.03,
@@ -609,7 +676,6 @@ function PlanetNode({
               ORBIT_SEGMENTS,
             ]}
           />
-
           <meshBasicMaterial
             color={isDark ? "#fce803" : "#0257c6"}
             transparent
@@ -621,75 +687,86 @@ function PlanetNode({
       )}
 
       <group ref={orbitRef}>
-        <group
-          ref={planetPositionRef}
-          position={[planetPosition.x, planetPosition.y, planetPosition.z]}
-        >
-          <group rotation={[0, 0, planet.tiltRad]}>
-            <mesh
-              ref={meshRef}
-              scale={hovered ? 1.08 : 1}
-              onClick={(event) => {
-                event.stopPropagation();
-                onSelect(planet.name);
-              }}
-              onPointerOver={() => {
-                setHovered(true);
-                document.body.style.cursor = "pointer";
-              }}
-              onPointerOut={() => {
-                setHovered(false);
-                document.body.style.cursor = "auto";
-              }}
-            >
-              <sphereGeometry args={[planet.radiusScaled, 40, 40]} />
-              <meshStandardMaterial
-                map={texture}
-                color={planet.color}
-                roughness={0.72}
-                metalness={0.05}
-                emissive={
-                  hovered ? planet.color : lightPresetConfig.planetEmissiveColor
-                }
-                emissiveIntensity={
-                  hovered
-                    ? lightPresetConfig.planetEmissiveBoost + 0.25
-                    : lightPresetConfig.planetEmissiveBoost
-                }
-              />
-              {showAxis && <primitive object={axisHelper} />}
-            </mesh>
+        <group rotation={[planet.orbitalInclinationRad ?? 0, 0, 0]}>
+          <group
+            ref={planetPositionRef}
+            position={[planetPosition.x, planetPosition.y, planetPosition.z]}
+          >
+            <group rotation={[0, seasonOffsetRad, 0]}>
+              <group rotation={[0, 0, -planet.tiltRad]}>
+                <mesh
+                  ref={meshRef}
+                  scale={hovered ? 1.08 : 1}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSelect(planet.name);
+                  }}
+                  onPointerOver={() => {
+                    setHovered(true);
+                    document.body.style.cursor = "pointer";
+                  }}
+                  onPointerOut={() => {
+                    setHovered(false);
+                    document.body.style.cursor = "auto";
+                  }}
+                >
+                  <sphereGeometry args={[planet.radiusScaled, 40, 40]} />
+                  <meshStandardMaterial
+                    map={texture}
+                    color={planet.color}
+                    roughness={0.72}
+                    metalness={0.05}
+                    emissive={
+                      hovered
+                        ? planet.color
+                        : lightPresetConfig.planetEmissiveColor
+                    }
+                    emissiveIntensity={
+                      hovered
+                        ? lightPresetConfig.planetEmissiveBoost + 0.25
+                        : lightPresetConfig.planetEmissiveBoost
+                    }
+                  />
+                  {showAxis && <primitive object={axisHelper} />}
+                </mesh>
 
-            {ring && (
-              <RingNode ring={ring} lightPresetConfig={lightPresetConfig} />
+                {ring && (
+                  <RingNode ring={ring} lightPresetConfig={lightPresetConfig} />
+                )}
+
+                {moon && (
+                  <MoonNode
+                    moon={moon}
+                    language={language}
+                    elapsedSimDays={elapsedSimDays}
+                    showLabels={showLabels}
+                    showAxis={showAxis}
+                    animationSpeed={animationSpeed}
+                    isPaused={isPaused}
+                    isDark={isDark}
+                    lightPresetConfig={lightPresetConfig}
+                    ephemerisPosition={moonEphemerisPosition}
+                    ephemerisOrbit={moonEphemerisOrbit}
+                    onSelect={onSelect}
+                  />
+                )}
+              </group>
+            </group>
+
+            {showLabels && (
+              <SolarLabel
+                text={getSceneLabel(planet.name, language)}
+                isDark={isDark}
+                position={[0, planet.radiusScaled + 0.4, 0]}
+                distanceFactor={14}
+                /*    occludeTargets={
+                  sunOcclusionReady
+                    ? [sunMeshRef as React.RefObject<THREE.Object3D>]
+                    : undefined
+                } */
+              />
             )}
           </group>
-
-          {moon && (
-            <MoonNode
-              moon={moon}
-              language={language}
-              elapsedSimDays={elapsedSimDays}
-              showLabels={showLabels}
-              showAxis={showAxis}
-              animationSpeed={animationSpeed}
-              isPaused={isPaused}
-              isDark={isDark}
-              lightPresetConfig={lightPresetConfig}
-              ephemerisPosition={moonEphemerisPosition}
-              ephemerisOrbit={moonEphemerisOrbit}
-              onSelect={onSelect}
-            />
-          )}
-
-          {showLabels && (
-            <SolarLabel
-              text={getSceneLabel(planet.name, language)}
-              isDark={isDark}
-              position={[0, planet.radiusScaled + 0.4, 0]}
-              distanceFactor={14}
-            />
-          )}
         </group>
       </group>
     </>
@@ -819,6 +896,16 @@ export const Scene: React.FC<SceneProps> = ({
   /*   const backgroundTexture = useTexture(
     backgroundUrl || resolveAssetUrl("./textures/sky/2k_stars.jpg"),
   ) as THREE.Texture; */
+
+  // const sunMeshRef = useRef<THREE.Mesh>(null!);
+  //const sunMeshRef = useRef<THREE.Mesh | null>(null);
+  // const [sunOcclusionReady, setSunOcclusionReady] = useState(false);
+
+  /*   useEffect(() => {
+    if (sunMeshRef.current) {
+      setSunOcclusionReady(true);
+    }
+  }, []); */
 
   const backgroundTexture = useTexture(
     backgroundUrl ??
@@ -1045,6 +1132,7 @@ export const Scene: React.FC<SceneProps> = ({
 
       <SunNode
         sun={sceneModel.sun}
+        // sunMeshRef={sunMeshRef}
         language={language}
         showLabels={showLabels}
         isDark={isDark}
@@ -1065,6 +1153,8 @@ export const Scene: React.FC<SceneProps> = ({
       {sceneModel.planets.map((planet) => (
         <PlanetNode
           key={planet.name}
+          // sunMeshRef={sunMeshRef}
+          // sunOcclusionReady={sunOcclusionReady}
           planet={planet}
           ring={sceneModel.ringByParent.get(planet.name)}
           moon={sceneModel.moonByParent.get(planet.name)}

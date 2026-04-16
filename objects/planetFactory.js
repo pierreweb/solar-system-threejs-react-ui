@@ -87,6 +87,7 @@ export function createPlanetDescriptor(obj) {
     orbitRadius: distance,
     radiusScaled: radius,
     tiltRad: degToRad(obj.tiltDeg || 0),
+    orbitalInclinationRad: degToRad(obj.orbitalInclinationDeg || 0),
     orbitSpeed: getOrbitSpeed(obj.yearDays),
     selfRotationSpeed: getPlanetSelfRotationSpeed(obj.name),
   };
