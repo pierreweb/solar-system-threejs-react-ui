@@ -55,6 +55,7 @@ interface PlanetRenderModel {
   selfRotationSpeed: number;
   tiltRad: number;
   orbitalInclinationRad: number;
+  orbitalAscendingNodeRad: number;
   textureUrl?: string | null;
 }
 
@@ -665,7 +666,7 @@ function PlanetNode({
   });
   return (
     <>
-      {showOrbits && (
+      {/*  {showOrbits && (
         <mesh
           rotation={[-Math.PI / 2 + (planet.orbitalInclinationRad ?? 0), 0, 0]}
         >
@@ -684,88 +685,115 @@ function PlanetNode({
             depthWrite={false}
           />
         </mesh>
+      )} */}
+      {showOrbits && (
+        <group rotation={[0, planet.orbitalAscendingNodeRad ?? 0, 0]}>
+          <group rotation={[planet.orbitalInclinationRad ?? 0, 0, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry
+                args={[
+                  visualOrbitRadius - 0.03,
+                  visualOrbitRadius + 0.03,
+                  ORBIT_SEGMENTS,
+                ]}
+              />
+              <meshBasicMaterial
+                color={isDark ? "#fce803" : "#0257c6"}
+                transparent
+                opacity={isDark ? 0.6 : 0.9}
+                side={THREE.DoubleSide}
+                depthWrite={false}
+              />
+            </mesh>
+          </group>
+        </group>
       )}
 
       <group ref={orbitRef}>
-        <group rotation={[planet.orbitalInclinationRad ?? 0, 0, 0]}>
-          <group
-            ref={planetPositionRef}
-            position={[planetPosition.x, planetPosition.y, planetPosition.z]}
-          >
-            <group rotation={[0, seasonOffsetRad, 0]}>
-              <group rotation={[0, 0, -planet.tiltRad]}>
-                <mesh
-                  ref={meshRef}
-                  scale={hovered ? 1.08 : 1}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onSelect(planet.name);
-                  }}
-                  onPointerOver={() => {
-                    setHovered(true);
-                    document.body.style.cursor = "pointer";
-                  }}
-                  onPointerOut={() => {
-                    setHovered(false);
-                    document.body.style.cursor = "auto";
-                  }}
-                >
-                  <sphereGeometry args={[planet.radiusScaled, 40, 40]} />
-                  <meshStandardMaterial
-                    map={texture}
-                    color={planet.color}
-                    roughness={0.72}
-                    metalness={0.05}
-                    emissive={
-                      hovered
-                        ? planet.color
-                        : lightPresetConfig.planetEmissiveColor
-                    }
-                    emissiveIntensity={
-                      hovered
-                        ? lightPresetConfig.planetEmissiveBoost + 0.25
-                        : lightPresetConfig.planetEmissiveBoost
-                    }
-                  />
-                  {showAxis && <primitive object={axisHelper} />}
-                </mesh>
+        <group rotation={[0, planet.orbitalAscendingNodeRad ?? 0, 0]}>
+          <group rotation={[planet.orbitalInclinationRad ?? 0, 0, 0]}>
+            <group
+              ref={planetPositionRef}
+              position={[planetPosition.x, planetPosition.y, planetPosition.z]}
+            >
+              <group rotation={[0, seasonOffsetRad, 0]}>
+                <group rotation={[0, 0, -planet.tiltRad]}>
+                  <mesh
+                    ref={meshRef}
+                    scale={hovered ? 1.08 : 1}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelect(planet.name);
+                    }}
+                    onPointerOver={() => {
+                      setHovered(true);
+                      document.body.style.cursor = "pointer";
+                    }}
+                    onPointerOut={() => {
+                      setHovered(false);
+                      document.body.style.cursor = "auto";
+                    }}
+                  >
+                    <sphereGeometry args={[planet.radiusScaled, 40, 40]} />
+                    <meshStandardMaterial
+                      map={texture}
+                      color={planet.color}
+                      roughness={0.72}
+                      metalness={0.05}
+                      emissive={
+                        hovered
+                          ? planet.color
+                          : lightPresetConfig.planetEmissiveColor
+                      }
+                      emissiveIntensity={
+                        hovered
+                          ? lightPresetConfig.planetEmissiveBoost + 0.25
+                          : lightPresetConfig.planetEmissiveBoost
+                      }
+                    />
+                    {showAxis && <primitive object={axisHelper} />}
+                  </mesh>
 
-                {ring && (
-                  <RingNode ring={ring} lightPresetConfig={lightPresetConfig} />
-                )}
+                  {ring && (
+                    <RingNode
+                      ring={ring}
+                      lightPresetConfig={lightPresetConfig}
+                    />
+                  )}
 
-                {moon && (
-                  <MoonNode
-                    moon={moon}
-                    language={language}
-                    elapsedSimDays={elapsedSimDays}
-                    showLabels={showLabels}
-                    showAxis={showAxis}
-                    animationSpeed={animationSpeed}
-                    isPaused={isPaused}
-                    isDark={isDark}
-                    lightPresetConfig={lightPresetConfig}
-                    ephemerisPosition={moonEphemerisPosition}
-                    ephemerisOrbit={moonEphemerisOrbit}
-                    onSelect={onSelect}
-                  />
-                )}
+                  {moon && (
+                    <MoonNode
+                      moon={moon}
+                      language={language}
+                      elapsedSimDays={elapsedSimDays}
+                      showLabels={showLabels}
+                      showAxis={showAxis}
+                      animationSpeed={animationSpeed}
+                      isPaused={isPaused}
+                      isDark={isDark}
+                      lightPresetConfig={lightPresetConfig}
+                      ephemerisPosition={moonEphemerisPosition}
+                      ephemerisOrbit={moonEphemerisOrbit}
+                      onSelect={onSelect}
+                    />
+                  )}
+                </group>
               </group>
-            </group>
 
-            {showLabels && (
-              <SolarLabel
-                text={getSceneLabel(planet.name, language)}
-                isDark={isDark}
-                position={[0, planet.radiusScaled + 0.4, 0]}
-                distanceFactor={14}
-                /*    occludeTargets={
+              {showLabels && (
+                <SolarLabel
+                  text={getSceneLabel(planet.name, language)}
+                  isDark={isDark}
+                  position={[0, planet.radiusScaled + 0.4, 0]}
+                  distanceFactor={14}
+                  /*    occludeTargets={
                   sunOcclusionReady
                     ? [sunMeshRef as React.RefObject<THREE.Object3D>]
                     : undefined
                 } */
-              />
-            )}
+                />
+              )}
+            </group>
           </group>
         </group>
       </group>
