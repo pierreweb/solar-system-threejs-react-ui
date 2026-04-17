@@ -28,6 +28,7 @@ import type {
 import { SolarLabel } from "./SolarLabel";
 
 import { SunMaterial } from "../components/SunMaterial";
+import { mx_bilerp_1 } from "three/src/nodes/materialx/lib/mx_noise.js";
 
 interface SceneProps {
   onPlanetSelect: (planetName: string) => void;
@@ -259,14 +260,14 @@ function getAxisHelperSize(
 ) {
   switch (kind) {
     case "sun":
-      return Math.max(radiusScaled * 1.1, 1);
+      return Math.max(radiusScaled * 1.1, 0.1);
 
     case "moon":
-      return Math.max(radiusScaled * 1.2, 0.3);
+      return Math.max(radiusScaled * 1.2, 0.1);
 
     case "planet":
     default:
-      return Math.max(radiusScaled * 1.3, 0.3);
+      return Math.max(radiusScaled * 1.3, 0.1);
   }
 }
 
@@ -276,14 +277,14 @@ function getLabelOffsetY(
 ) {
   switch (kind) {
     case "sun":
-      return radiusScaled + Math.max(radiusScaled * 0.5, 1.2);
+      return radiusScaled + 1.0; // Math.max(radiusScaled * 0.5, 1.2);
 
     case "moon":
-      return radiusScaled + Math.max(radiusScaled * 0.35, 0.25);
+      return radiusScaled * 1.9; // Math.max(radiusScaled * 0.35, 0.25);
 
     case "planet":
     default:
-      return radiusScaled + Math.max(radiusScaled * 1.3, 0.35);
+      return radiusScaled * 2.0; //Math.max(radiusScaled * 1.3, 0.35);
   }
 }
 
@@ -303,6 +304,7 @@ function SunNode({
   // sunMeshRef,
   language,
   showLabels,
+  showAxis,
   isDark,
   animationSpeed,
   isPaused,
@@ -312,6 +314,7 @@ function SunNode({
   // sunMeshRef: React.MutableRefObject<THREE.Mesh | null>;
   language: "EN" | "FR";
   showLabels: boolean;
+  showAxis: boolean;
   isDark: boolean;
   animationSpeed: number;
   isPaused: boolean;
@@ -322,10 +325,19 @@ function SunNode({
   /*   const texture = useTexture(
     sun.textureUrl || resolveAssetUrl("./textures/2k_sun.jpg"),
   ) as THREE.Texture; */
-  const axisHelper = useMemo(
+  /*   const axisHelper = useMemo(
     () => new THREE.AxesHelper(getAxisHelperSize(sun.radiusScaled, "sun")),
     [sun.radiusScaled],
-  );
+  ); */
+
+  const axisHelper = useMemo(() => {
+    const helper = new THREE.AxesHelper(
+      getAxisHelperSize(sun.radiusScaled, "sun"),
+    );
+    helper.raycast = () => null;
+    return helper;
+  }, [sun.radiusScaled]);
+
   const texture = useTexture(
     sun.textureUrl ??
       resolveAssetUrl("./textures/2k_sun.jpg") ??
@@ -401,6 +413,8 @@ function SunNode({
         /> */}
 
         <SunMaterial map={texture} />
+
+        {showAxis && <primitive object={axisHelper} />}
       </mesh>
       {/* 
       <mesh scale={0.99}>
@@ -469,10 +483,18 @@ function MoonNode({
     [moon.radiusScaled],
   ); */
 
-  const axisHelper = useMemo(
+  /*   const axisHelper = useMemo(
     () => new THREE.AxesHelper(getAxisHelperSize(moon.radiusScaled, "moon")),
     [moon.radiusScaled],
-  );
+  ); */
+
+  const axisHelper = useMemo(() => {
+    const helper = new THREE.AxesHelper(
+      getAxisHelperSize(moon.radiusScaled, "moon"),
+    );
+    helper.raycast = () => null;
+    return helper;
+  }, [moon.radiusScaled]);
 
   /*   const texture = useTexture(
     moon.textureUrl || resolveAssetUrl("./textures/2k_moon.jpg"),
@@ -566,7 +588,7 @@ function MoonNode({
                 text={getSceneLabel(moon.name, language)}
                 isDark={isDark}
                 //position={[0, moon.radiusScaled + 0.25, 0]}
-                position={[0, moon.radiusScaled + 0.25, 0]}
+                position={[0, getLabelOffsetY(moon.radiusScaled, "planet"), 0]}
                 distanceFactor={14}
               />
             )}
@@ -671,11 +693,19 @@ function PlanetNode({
     [planet.radiusScaled],
   ); */
 
-  const axisHelper = useMemo(
+  /*   const axisHelper = useMemo(
     () =>
       new THREE.AxesHelper(getAxisHelperSize(planet.radiusScaled, "planet")),
     [planet.radiusScaled],
-  );
+  ); */
+
+  const axisHelper = useMemo(() => {
+    const helper = new THREE.AxesHelper(
+      getAxisHelperSize(planet.radiusScaled, "planet"),
+    );
+    helper.raycast = () => null;
+    return helper;
+  }, [planet.radiusScaled]);
 
   /*   const texture = useTexture(
     planet.textureUrl || resolveAssetUrl("./textures/2k_mercury.jpg"),
@@ -981,7 +1011,7 @@ export const Scene: React.FC<SceneProps> = ({
   backgroundOpacity,
   lightPreset,
 }) => {
-  const axisHelper = useMemo(() => new THREE.AxesHelper(5), []);
+  // const axisHelper = useMemo(() => new THREE.AxesHelper(5), []);
 
   /*   const backgroundTexture = useTexture(
     backgroundUrl || resolveAssetUrl("./textures/sky/2k_stars.jpg"),
@@ -1225,6 +1255,7 @@ export const Scene: React.FC<SceneProps> = ({
         // sunMeshRef={sunMeshRef}
         language={language}
         showLabels={showLabels}
+        showAxis={showAxis}
         isDark={isDark}
         animationSpeed={animationSpeed}
         isPaused={isPaused}
@@ -1285,7 +1316,7 @@ export const Scene: React.FC<SceneProps> = ({
         />
       ))}
 
-      {showAxis && <primitive object={axisHelper} />}
+      {/* {showAxis && <primitive object={axisHelper} />} */}
 
       <OrbitControls enablePan={true} minDistance={8} maxDistance={100} />
     </>

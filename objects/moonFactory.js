@@ -26,7 +26,7 @@ function getMoonConfig() {
   );
 }
 
-export function createMoonForEarth(preset, deps) {
+/* export function createMoonForEarth(preset, deps) {
   const {
     THREE,
     objectRegistry,
@@ -99,7 +99,7 @@ export function createMoonForEarth(preset, deps) {
     labelObjects.push(earth.moon);
   }
 }
-
+ */
 /* export function createEarthMoonDescriptor(earthDescriptor) {
   const moonConfig = getMoonConfig();
   const { distance, radius } = getSimulationBodyVisuals(moonConfig);
