@@ -90,6 +90,8 @@ export const simulationBodyConfigs = [
     yearDays: 27.32,
     dayHours: 655.68,
     tiltDeg: 6.68,
+    orbitalInclinationDeg: 5.145,
+    orbitalAscendingNodeDeg: 125.08,
     texture: "./textures/2k_moon.jpg",
     color: 0xd0d0d0,
     hasOrbitRing: false,

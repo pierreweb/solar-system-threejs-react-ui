@@ -75,6 +75,8 @@ interface MoonRenderModel {
   selfRotationSpeed: number;
   textureUrl?: string | null;
   color: number;
+  orbitalInclinationRad?: number;
+  orbitalAscendingNodeRad?: number;
 }
 
 interface BeltRenderModel {
@@ -474,53 +476,57 @@ function MoonNode({
 
   return (
     <group ref={orbitRef}>
-      <group
-        ref={moonPositionRef}
-        position={[moonPosition.x, moonPosition.y, moonPosition.z]}
-      >
-        <mesh
-          ref={meshRef}
-          scale={hovered ? 1.06 : 1}
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelect(moon.name);
-          }}
-          onPointerOver={() => {
-            setHovered(true);
-            document.body.style.cursor = "pointer";
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-            document.body.style.cursor = "auto";
-          }}
-        >
-          <sphereGeometry args={[moon.radiusScaled, 24, 24]} />
-          <meshStandardMaterial
-            map={texture}
-            color={moon.color}
-            roughness={0.78}
-            metalness={0.04}
-            emissive={
-              hovered ? moon.color : lightPresetConfig.moonEmissiveColor
-            }
-            emissiveIntensity={
-              hovered
-                ? lightPresetConfig.moonEmissiveBoost + 0.12
-                : lightPresetConfig.moonEmissiveBoost
-            }
-          />
+      <group rotation={[0, moon.orbitalAscendingNodeRad ?? 0, 0]}>
+        <group rotation={[moon.orbitalInclinationRad ?? 0, 0, 0]}>
+          <group
+            ref={moonPositionRef}
+            position={[moonPosition.x, moonPosition.y, moonPosition.z]}
+          >
+            <mesh
+              ref={meshRef}
+              scale={hovered ? 1.06 : 1}
+              onClick={(event) => {
+                event.stopPropagation();
+                onSelect(moon.name);
+              }}
+              onPointerOver={() => {
+                setHovered(true);
+                document.body.style.cursor = "pointer";
+              }}
+              onPointerOut={() => {
+                setHovered(false);
+                document.body.style.cursor = "auto";
+              }}
+            >
+              <sphereGeometry args={[moon.radiusScaled, 24, 24]} />
+              <meshStandardMaterial
+                map={texture}
+                color={moon.color}
+                roughness={0.78}
+                metalness={0.04}
+                emissive={
+                  hovered ? moon.color : lightPresetConfig.moonEmissiveColor
+                }
+                emissiveIntensity={
+                  hovered
+                    ? lightPresetConfig.moonEmissiveBoost + 0.12
+                    : lightPresetConfig.moonEmissiveBoost
+                }
+              />
 
-          {showAxis && <primitive object={axisHelper} />}
-        </mesh>
+              {showAxis && <primitive object={axisHelper} />}
+            </mesh>
 
-        {showLabels && (
-          <SolarLabel
-            text={getSceneLabel(moon.name, language)}
-            isDark={isDark}
-            position={[0, moon.radiusScaled + 0.25, 0]}
-            distanceFactor={14}
-          />
-        )}
+            {showLabels && (
+              <SolarLabel
+                text={getSceneLabel(moon.name, language)}
+                isDark={isDark}
+                position={[0, moon.radiusScaled + 0.25, 0]}
+                distanceFactor={14}
+              />
+            )}
+          </group>
+        </group>
       </group>
     </group>
   );
@@ -760,25 +766,25 @@ function PlanetNode({
                       lightPresetConfig={lightPresetConfig}
                     />
                   )}
-
-                  {moon && (
-                    <MoonNode
-                      moon={moon}
-                      language={language}
-                      elapsedSimDays={elapsedSimDays}
-                      showLabels={showLabels}
-                      showAxis={showAxis}
-                      animationSpeed={animationSpeed}
-                      isPaused={isPaused}
-                      isDark={isDark}
-                      lightPresetConfig={lightPresetConfig}
-                      ephemerisPosition={moonEphemerisPosition}
-                      ephemerisOrbit={moonEphemerisOrbit}
-                      onSelect={onSelect}
-                    />
-                  )}
                 </group>
               </group>
+
+              {moon && (
+                <MoonNode
+                  moon={moon}
+                  language={language}
+                  elapsedSimDays={elapsedSimDays}
+                  showLabels={showLabels}
+                  showAxis={showAxis}
+                  animationSpeed={animationSpeed}
+                  isPaused={isPaused}
+                  isDark={isDark}
+                  lightPresetConfig={lightPresetConfig}
+                  ephemerisPosition={moonEphemerisPosition}
+                  ephemerisOrbit={moonEphemerisOrbit}
+                  onSelect={onSelect}
+                />
+              )}
 
               {showLabels && (
                 <SolarLabel

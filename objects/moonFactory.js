@@ -9,6 +9,7 @@
 import {
   getOrbitSpeed,
   getSelfRotationSpeed,
+  degToRad,
   resolveAssetUrl,
 } from "./sceneObjectUtils.js";
 
@@ -136,5 +137,7 @@ export function createEarthMoonDescriptor(earthDescriptor) {
     selfRotationSpeed: getSelfRotationSpeed(
       moonConfig?.dayHours ?? MOON_ROTATION_DAYS * 24,
     ),
+    orbitalInclinationRad: degToRad(moonConfig?.orbitalInclinationDeg || 0),
+    orbitalAscendingNodeRad: degToRad(moonConfig?.orbitalAscendingNodeDeg || 0),
   };
 }
