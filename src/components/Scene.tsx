@@ -253,6 +253,40 @@ function getSelfRotationAngleFromElapsedSimDays(
   return direction * ((Math.PI * 2 * elapsedSimDays) / rotationPeriodDays);
 }
 
+function getAxisHelperSize(
+  radiusScaled: number,
+  kind: "sun" | "planet" | "moon" = "planet",
+) {
+  switch (kind) {
+    case "sun":
+      return Math.max(radiusScaled * 1.1, 1);
+
+    case "moon":
+      return Math.max(radiusScaled * 1.2, 0.3);
+
+    case "planet":
+    default:
+      return Math.max(radiusScaled * 1.3, 0.3);
+  }
+}
+
+function getLabelOffsetY(
+  radiusScaled: number,
+  kind: "sun" | "planet" | "moon" = "planet",
+) {
+  switch (kind) {
+    case "sun":
+      return radiusScaled + Math.max(radiusScaled * 0.5, 1.2);
+
+    case "moon":
+      return radiusScaled + Math.max(radiusScaled * 0.35, 0.25);
+
+    case "planet":
+    default:
+      return radiusScaled + Math.max(radiusScaled * 1.3, 0.35);
+  }
+}
+
 function CameraSetup() {
   const { camera } = useThree();
 
@@ -288,6 +322,10 @@ function SunNode({
   /*   const texture = useTexture(
     sun.textureUrl || resolveAssetUrl("./textures/2k_sun.jpg"),
   ) as THREE.Texture; */
+  const axisHelper = useMemo(
+    () => new THREE.AxesHelper(getAxisHelperSize(sun.radiusScaled, "sun")),
+    [sun.radiusScaled],
+  );
   const texture = useTexture(
     sun.textureUrl ??
       resolveAssetUrl("./textures/2k_sun.jpg") ??
@@ -385,7 +423,8 @@ function SunNode({
         <SolarLabel
           text={getSceneLabel(sun.name, language)}
           isDark={isDark}
-          position={[0, sun.labelOffsetY, 0]}
+          // position={[0, sun.labelOffsetY, 0]}
+          position={[0, getLabelOffsetY(sun.radiusScaled, "sun"), 0]}
           distanceFactor={16}
         />
       )}
@@ -425,8 +464,13 @@ function MoonNode({
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
+  /*   const axisHelper = useMemo(
+    () => new THREE.AxesHelper(Math.max(moon.radiusScaled * 1.5, 0.5)),
+    [moon.radiusScaled],
+  ); */
+
   const axisHelper = useMemo(
-    () => new THREE.AxesHelper(Math.max(moon.radiusScaled * 4, 0.6)),
+    () => new THREE.AxesHelper(getAxisHelperSize(moon.radiusScaled, "moon")),
     [moon.radiusScaled],
   );
 
@@ -521,6 +565,7 @@ function MoonNode({
               <SolarLabel
                 text={getSceneLabel(moon.name, language)}
                 isDark={isDark}
+                //position={[0, moon.radiusScaled + 0.25, 0]}
                 position={[0, moon.radiusScaled + 0.25, 0]}
                 distanceFactor={14}
               />
@@ -621,8 +666,14 @@ function PlanetNode({
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
+  /*   const axisHelper = useMemo(
+    () => new THREE.AxesHelper(Math.max(planet.radiusScaled * 1.5, 0.5)),
+    [planet.radiusScaled],
+  ); */
+
   const axisHelper = useMemo(
-    () => new THREE.AxesHelper(Math.max(planet.radiusScaled * 3, 0.8)),
+    () =>
+      new THREE.AxesHelper(getAxisHelperSize(planet.radiusScaled, "planet")),
     [planet.radiusScaled],
   );
 
@@ -790,7 +841,12 @@ function PlanetNode({
                 <SolarLabel
                   text={getSceneLabel(planet.name, language)}
                   isDark={isDark}
-                  position={[0, planet.radiusScaled + 0.4, 0]}
+                  // position={[0, planet.radiusScaled + 0.4, 0]}
+                  position={[
+                    0,
+                    getLabelOffsetY(planet.radiusScaled, "planet"),
+                    0,
+                  ]}
                   distanceFactor={14}
                   /*    occludeTargets={
                   sunOcclusionReady

@@ -47,10 +47,10 @@ export function createPlanetObject(obj, preset, deps) {
   mesh.userData.clickable = true;
   clickableMeshes.push(mesh);
 
-  if (SHOW_AXES_HELPER) {
+  /*   if (SHOW_AXES_HELPER) {
     const axisLine = new THREE.AxesHelper(radius * 2.2);
     mesh.add(axisLine);
-  }
+  } */
 
   const orbitRing = obj.hasOrbitRing
     ? createOrbitRing(distance, { group, orbitRingObjects })

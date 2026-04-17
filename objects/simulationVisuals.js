@@ -43,7 +43,7 @@ function getResolvedSunRadius() {
   );
 }
 function adaptedScaledRadius(physicalRadiusKm) {
-  const MIN_RADIUS_NORMALIZED = 2439 / 10_000; // Mercury
+  /*   const MIN_RADIUS_NORMALIZED = 2439 / 10_000; // Mercury
   const MAX_RADIUS_NORMALIZED = 696_340 / 10_000; // Sun 69911 jupiter
 
   const normalized = physicalRadiusKm / 10_000;
@@ -52,7 +52,7 @@ function adaptedScaledRadius(physicalRadiusKm) {
       (MAX_RADIUS_NORMALIZED - MIN_RADIUS_NORMALIZED),
     0,
     1,
-  );
+  ); */
   //const adaptedRadius = 0.1 + 10 * Math.sqrt(ratio); //Math.log10(1.4 + 20.0 * ratio);
   const adaptedRadius =
     0.05 + 0.8987 * Math.log10(0.1 + physicalRadiusKm) - 2.3541;
@@ -63,7 +63,7 @@ function adaptedScaledRadius(physicalRadiusKm) {
 }
 
 function adaptedLogScaleDistance(physicalDistanceAu = 0) {
-  const MIN_DISTANCE_NORMALIZED = 0.387; // Mercury
+  /* const MIN_DISTANCE_NORMALIZED = 0.387; // Mercury
   const MAX_DISTANCE_NORMALIZED = 39.48; // Pluto
 
   const normalized = physicalDistanceAu;
@@ -72,7 +72,7 @@ function adaptedLogScaleDistance(physicalDistanceAu = 0) {
       (MAX_DISTANCE_NORMALIZED - MIN_DISTANCE_NORMALIZED),
     0,
     1,
-  );
+  ); */
   const adaptedDistance =
     getSunMinRadius() +
     MIN_DISTANCE_FROM_SUN +
@@ -124,7 +124,7 @@ export function getSimulationBodyVisuals(body = {}) {
             )
         : 0;
 
-  console.log(`Resolved radius for ${name}: ${resolvedRadius}`);
+  // console.log(`Resolved radius for ${name}: ${resolvedRadius}`);
   //console.log(`Resolved distance for ${name}: ${resolvedDistance}`);
   //console.log(`Sun max radius: ${getSunMaxRadius()}`); */
 
