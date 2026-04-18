@@ -88,19 +88,6 @@
     @apply py-12 text-center opacity-40 italic font-light tracking-widest;
   }
 
-  /*   .dark .planet-info-stat-label {
-    @apply text-blue-600;
-  }
-  .light .planet-info-stat-label {
-    color: #37ff00;
-  }
-  .dark .planet-info-stat-value {
-    color: #e301f4;
-  }
-  .light .planet-info-stat-value {
-    @apply text-blue-500;
-  } */
-
   .dark .planet-info-kicker {
     @apply text-gold-neon;
   }

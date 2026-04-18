@@ -1,5 +1,6 @@
-import React from "react";
-import * as THREE from "three";
+/* import React from "react";
+import * as THREE from "three"; */
+//src/components/SolarLabel.tsx
 import { Html } from "@react-three/drei";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";

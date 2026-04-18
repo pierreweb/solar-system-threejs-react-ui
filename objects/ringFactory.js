@@ -1,7 +1,4 @@
-/* import {
-  getScaledRadius,
-  resolveAssetUrl,
-} from "./sceneObjectUtils.js"; */
+//objects/ringFactory.js
 import { getSimulationBodyVisuals } from "./simulationVisuals.js";
 
 import { resolveAssetUrl } from "./sceneObjectUtils.js";
@@ -60,28 +57,6 @@ export function createRingObject(obj, preset, deps) {
   objectRegistry.set(entry.name, entry);
   return entry;
 }
-
-/* export function createRingDescriptor(obj) {
-  const ringConfig = obj.rings ?? {};
-  const { radius } = getSimulationBodyVisuals(obj);
-  const innerRadius =
-    typeof ringConfig.innerRadius === "number"
-      ? ringConfig.innerRadius
-      : radius * (ringConfig.innerRadiusRelativeToPlanet ?? 1.3);
-  const outerRadius =
-    typeof ringConfig.outerRadius === "number"
-      ? ringConfig.outerRadius
-      : radius * (ringConfig.outerRadiusRelativeToPlanet ?? 2.1);
-
-  return {
-    name: `${obj.name} Ring`,
-    parentName: obj.name,
-    textureUrl: resolveAssetUrl(ringConfig.texture),
-    color: ringConfig.color,
-    innerRadiusScaled: getScaledRadius(innerRadius),
-    outerRadiusScaled: getScaledRadius(outerRadius),
-  };
-} */
 
 export function createRingDescriptor(obj) {
   const ringConfig = obj.rings ?? {};

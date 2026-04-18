@@ -47,6 +47,8 @@ const planetDrawerTranslations = {
       density: "Density",
       volume: "Volume",
       orbitalPeriod: "Orbital Period",
+      orbitalInclination: "Orbital inclination",
+      orbitalAscendingNode: "Longitude of ascending node",
       rotationPeriod: "Rotation Period",
       distanceFromSun: "Distance from Sun",
       albedo: "Albedo",
@@ -75,6 +77,9 @@ const planetDrawerTranslations = {
       density: "Densité",
       volume: "Volume",
       orbitalPeriod: "Période orbitale",
+      orbitalInclination: "Inclinaison orbitale",
+      orbitalAscendingNode: "Longitude du nœud ascendant",
+
       rotationPeriod: "Période de rotation",
       distanceFromSun: "Distance au Soleil",
       albedo: "Albédo",
@@ -172,7 +177,7 @@ const EPHEMERIS_BODY_NAMES: SupportedEphemerisBodyName[] = [
 ];
 const MILLISECONDS_PER_DAY = 86400000;
 
-const planetDrawerFieldConfig = [
+/* const planetDrawerFieldConfig = [
   { key: "mass", compareKey: "massVsEarth" },
   { key: "equatorialRadius", compareKey: "radiusVsEarth" },
   { key: "density", compareKey: "densityVsEarth" },
@@ -191,10 +196,48 @@ const planetDrawerFieldConfig = [
   { key: "minTemperature" },
   { key: "maxTemperature" },
   { key: "moons" },
+] as const; */
+const planetDrawerFieldConfig = [
+  { key: "mass", compareKey: "massVsEarth" },
+  { key: "equatorialRadius", compareKey: "radiusVsEarth" },
+  { key: "density", compareKey: "densityVsEarth" },
+  { key: "volume", compareKey: "volumeVsEarth" },
+  { key: "orbitalPeriod" },
+  { key: "orbitalInclination" },
+  { key: "orbitalAscendingNode" },
+  { key: "rotationPeriod" },
+  {
+    key: "distanceFromSun",
+    compareKey: "distanceVsEarth",
+    auKey: "distanceAu",
+  },
+  { key: "albedo" },
+  { key: "gravity", compareKey: "gravityVsEarth" },
+  { key: "escapeVelocity", compareKey: "escapeVelocityVsEarth" },
+  { key: "meanTemperature" },
+  { key: "minTemperature" },
+  { key: "maxTemperature" },
+  { key: "moons" },
 ] as const;
-
 type Language = keyof typeof planetDrawerTranslations;
 type PlanetDrawerFieldKey = (typeof planetDrawerFieldConfig)[number]["key"];
+
+function formatAngle(
+  value: number | null | undefined,
+  unit: string | null | undefined,
+  language: "EN" | "FR",
+) {
+  if (value == null || !unit) return null;
+
+  if (unit === "deg") {
+    const formatted = Number(value)
+      .toFixed(3)
+      .replace(/\.?0+$/, "");
+    return `${formatted}°`;
+  }
+
+  return null;
+}
 
 const getLocalizedPlanetText = (
   value: string | { EN: string; FR: string } | undefined,
@@ -408,6 +451,25 @@ const getStructuredDrawerValue = (
         language,
         planetInfo.orbitalPeriodApproxYears,
       ) ?? planetInfo.orbitalPeriod
+    );
+  }
+  if (key === "orbitalInclination") {
+    return (
+      formatAngle(
+        planetInfo.orbitalInclinationValue,
+        planetInfo.orbitalInclinationUnit,
+        language,
+      ) ?? planetInfo.orbitalInclination
+    );
+  }
+
+  if (key === "orbitalAscendingNode") {
+    return (
+      formatAngle(
+        planetInfo.orbitalAscendingNodeValue,
+        planetInfo.orbitalAscendingNodeUnit,
+        language,
+      ) ?? planetInfo.orbitalAscendingNode
     );
   }
 
@@ -1028,7 +1090,7 @@ export default function App() {
                     isDark ? "text-white/40" : "text-black/40",
                   )}
                 >
-                    {missionControlCopy.temporalFlux}
+                  {missionControlCopy.temporalFlux}
                 </span>
                 <span
                   className={cn(
@@ -1072,7 +1134,9 @@ export default function App() {
                   ) : (
                     <Pause size={14} fill="currentColor" />
                   )}
-                  {isPaused ? missionControlCopy.resume : missionControlCopy.pause}
+                  {isPaused
+                    ? missionControlCopy.resume
+                    : missionControlCopy.pause}
                 </button>
               </div>
             </div>

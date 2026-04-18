@@ -1,3 +1,4 @@
+//objects/sunFactory
 import { getSimulationBodyVisuals } from "./simulationVisuals.js";
 import { resolveAssetUrl } from "./sceneObjectUtils.js";
 

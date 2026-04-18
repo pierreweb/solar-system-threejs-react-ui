@@ -10,7 +10,7 @@ import {
   OrbitControls,
   Stars,
   useTexture,
-  useVideoTexture,
+  //useVideoTexture,
 } from "@react-three/drei";
 import * as THREE from "three";
 import { simulationBodyConfigs } from "../../config/simulationBodyConfigs.js";
@@ -28,7 +28,6 @@ import type {
 import { SolarLabel } from "./SolarLabel";
 
 import { SunMaterial } from "../components/SunMaterial";
-import { mx_bilerp_1 } from "three/src/nodes/materialx/lib/mx_noise.js";
 
 interface SceneProps {
   onPlanetSelect: (planetName: string) => void;
@@ -100,7 +99,7 @@ interface SunRenderModel {
   textureUrl?: string | null;
   radiusScaled: number;
   haloRadiusScaled: number;
-  labelOffsetY: number;
+  //  labelOffsetY: number;
   rotationSpeed: number;
   color: number;
 }
@@ -322,13 +321,6 @@ function SunNode({
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
-  /*   const texture = useTexture(
-    sun.textureUrl || resolveAssetUrl("./textures/2k_sun.jpg"),
-  ) as THREE.Texture; */
-  /*   const axisHelper = useMemo(
-    () => new THREE.AxesHelper(getAxisHelperSize(sun.radiusScaled, "sun")),
-    [sun.radiusScaled],
-  ); */
 
   const axisHelper = useMemo(() => {
     const helper = new THREE.AxesHelper(
@@ -343,34 +335,6 @@ function SunNode({
       resolveAssetUrl("./textures/2k_sun.jpg") ??
       "/textures/2k_sun.jpg",
   ) as THREE.Texture;
-
-  /*  const video = useMemo(() => {
-    const v = document.createElement("video");
-    v.src =
-      resolveAssetUrl("./textures/Sun Texture Video Footage.mp4") ??
-      "/textures/Sun Texture Video Footage.mp4";
-    v.crossOrigin = "anonymous";
-    v.loop = true;
-    v.muted = true;
-    v.playsInline = true;
-    v.autoplay = true;
-    v.playbackRate = 0.5; // ralenti ici
-    return v;
-  }, []);
-
-  const videoTexture = useMemo(() => {
-    const tex = new THREE.VideoTexture(video);
-    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, [video]);
-
-  useEffect(() => {
-    video.play().catch(() => {});
-    return () => {
-      video.pause();
-    };
-  }, [video]); */
 
   useFrame((_, delta) => {
     if (isPaused || !meshRef.current) return;
@@ -437,7 +401,6 @@ function SunNode({
         <SolarLabel
           text={getSceneLabel(sun.name, language)}
           isDark={isDark}
-          // position={[0, sun.labelOffsetY, 0]}
           position={[0, getLabelOffsetY(sun.radiusScaled, "sun"), 0]}
           distanceFactor={16}
         />
@@ -478,16 +441,6 @@ function MoonNode({
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
-  /*   const axisHelper = useMemo(
-    () => new THREE.AxesHelper(Math.max(moon.radiusScaled * 1.5, 0.5)),
-    [moon.radiusScaled],
-  ); */
-
-  /*   const axisHelper = useMemo(
-    () => new THREE.AxesHelper(getAxisHelperSize(moon.radiusScaled, "moon")),
-    [moon.radiusScaled],
-  ); */
-
   const axisHelper = useMemo(() => {
     const helper = new THREE.AxesHelper(
       getAxisHelperSize(moon.radiusScaled, "moon"),
@@ -496,9 +449,6 @@ function MoonNode({
     return helper;
   }, [moon.radiusScaled]);
 
-  /*   const texture = useTexture(
-    moon.textureUrl || resolveAssetUrl("./textures/2k_moon.jpg"),
-  ) as THREE.Texture; */
   const texture = useTexture(
     moon.textureUrl ??
       resolveAssetUrl("./textures/2k_moon.jpg") ??
@@ -587,8 +537,7 @@ function MoonNode({
               <SolarLabel
                 text={getSceneLabel(moon.name, language)}
                 isDark={isDark}
-                //position={[0, moon.radiusScaled + 0.25, 0]}
-                position={[0, getLabelOffsetY(moon.radiusScaled, "planet"), 0]}
+                position={[0, getLabelOffsetY(moon.radiusScaled, "moon"), 0]}
                 distanceFactor={14}
               />
             )}
@@ -602,13 +551,12 @@ function MoonNode({
 function RingNode({
   ring,
   lightPresetConfig,
+  isDark,
 }: {
   ring: RingRenderModel;
   lightPresetConfig: (typeof LIGHT_PRESETS)["normal"];
+  isDark: boolean;
 }) {
-  /*   const texture = useTexture(
-    ring.textureUrl || resolveAssetUrl("./textures/saturn_small_ring_tex.png"),
-  ) as THREE.Texture; */
   const texture = useTexture(
     ring.textureUrl ??
       resolveAssetUrl("./textures/saturn_small_ring_tex.png") ??
@@ -623,18 +571,14 @@ function RingNode({
 
       <meshStandardMaterial
         map={texture}
-        //alphaMap={texture}//supprimé car sinon trop fade ne pas enlever ce commentaire
-        //alphaTest={0.01} //correction de l'alpha map
-        emissiveMap={texture}
-        // color={ring.color ?? lightPresetConfig.ringTint}
-        color={lightPresetConfig.ringTint ?? ring.color}
+        color={isDark ? (lightPresetConfig.ringTint ?? ring.color) : 0x7e7365}
         side={THREE.DoubleSide}
         transparent
-        opacity={lightPresetConfig.ringOpacity}
+        opacity={isDark ? lightPresetConfig.ringOpacity : 0.5}
         roughness={1}
         metalness={0}
-        emissive={lightPresetConfig.ringEmissiveColor}
-        emissiveIntensity={lightPresetConfig.ringEmissiveBoost}
+        emissive={isDark ? lightPresetConfig.ringEmissiveColor : 0x6e6254}
+        emissiveIntensity={isDark ? lightPresetConfig.ringEmissiveBoost : 0.2}
       />
     </mesh>
   );
@@ -642,8 +586,7 @@ function RingNode({
 
 function PlanetNode({
   planet,
-  // sunMeshRef,
-  //sunOcclusionReady,
+
   ring,
   moon,
   language,
@@ -663,8 +606,7 @@ function PlanetNode({
   onSelect,
 }: {
   planet: PlanetRenderModel;
-  //sunMeshRef: React.MutableRefObject<THREE.Mesh | null>;
-  // sunOcclusionReady: boolean;
+
   ring?: RingRenderModel;
   moon?: MoonRenderModel;
   language: "EN" | "FR";
@@ -688,17 +630,6 @@ function PlanetNode({
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
-  /*   const axisHelper = useMemo(
-    () => new THREE.AxesHelper(Math.max(planet.radiusScaled * 1.5, 0.5)),
-    [planet.radiusScaled],
-  ); */
-
-  /*   const axisHelper = useMemo(
-    () =>
-      new THREE.AxesHelper(getAxisHelperSize(planet.radiusScaled, "planet")),
-    [planet.radiusScaled],
-  ); */
-
   const axisHelper = useMemo(() => {
     const helper = new THREE.AxesHelper(
       getAxisHelperSize(planet.radiusScaled, "planet"),
@@ -707,9 +638,6 @@ function PlanetNode({
     return helper;
   }, [planet.radiusScaled]);
 
-  /*   const texture = useTexture(
-    planet.textureUrl || resolveAssetUrl("./textures/2k_mercury.jpg"),
-  ) as THREE.Texture; */
   const texture = useTexture(
     planet.textureUrl ??
       resolveAssetUrl("./textures/2k_mercury.jpg") ??
@@ -753,26 +681,6 @@ function PlanetNode({
   });
   return (
     <>
-      {/*  {showOrbits && (
-        <mesh
-          rotation={[-Math.PI / 2 + (planet.orbitalInclinationRad ?? 0), 0, 0]}
-        >
-          <ringGeometry
-            args={[
-              visualOrbitRadius - 0.03,
-              visualOrbitRadius + 0.03,
-              ORBIT_SEGMENTS,
-            ]}
-          />
-          <meshBasicMaterial
-            color={isDark ? "#fce803" : "#0257c6"}
-            transparent
-            opacity={isDark ? 0.6 : 0.9}
-            side={THREE.DoubleSide}
-            depthWrite={false}
-          />
-        </mesh>
-      )} */}
       {showOrbits && (
         <group rotation={[0, planet.orbitalAscendingNodeRad ?? 0, 0]}>
           <group rotation={[planet.orbitalInclinationRad ?? 0, 0, 0]}>
@@ -845,6 +753,7 @@ function PlanetNode({
                     <RingNode
                       ring={ring}
                       lightPresetConfig={lightPresetConfig}
+                      isDark={isDark}
                     />
                   )}
                 </group>
@@ -878,11 +787,6 @@ function PlanetNode({
                     0,
                   ]}
                   distanceFactor={14}
-                  /*    occludeTargets={
-                  sunOcclusionReady
-                    ? [sunMeshRef as React.RefObject<THREE.Object3D>]
-                    : undefined
-                } */
                 />
               )}
             </group>
@@ -1011,22 +915,6 @@ export const Scene: React.FC<SceneProps> = ({
   backgroundOpacity,
   lightPreset,
 }) => {
-  // const axisHelper = useMemo(() => new THREE.AxesHelper(5), []);
-
-  /*   const backgroundTexture = useTexture(
-    backgroundUrl || resolveAssetUrl("./textures/sky/2k_stars.jpg"),
-  ) as THREE.Texture; */
-
-  // const sunMeshRef = useRef<THREE.Mesh>(null!);
-  //const sunMeshRef = useRef<THREE.Mesh | null>(null);
-  // const [sunOcclusionReady, setSunOcclusionReady] = useState(false);
-
-  /*   useEffect(() => {
-    if (sunMeshRef.current) {
-      setSunOcclusionReady(true);
-    }
-  }, []); */
-
   const backgroundTexture = useTexture(
     backgroundUrl ??
       resolveAssetUrl("./textures/sky/2k_stars.jpg") ??
@@ -1046,10 +934,6 @@ export const Scene: React.FC<SceneProps> = ({
     const planets = simulationBodyConfigs
       .filter((obj) => obj.kind === "planet" || obj.kind === "dwarf")
       .map((obj) => createPlanetDescriptor(obj)) as PlanetRenderModel[];
-
-    /*    const rings = simulationBodyConfigs
-      .filter((obj) => obj.kind === "ring")
-      .map((obj) => createRingDescriptor(obj)) as RingRenderModel[]; */
 
     const rings = simulationBodyConfigs
       .filter(
@@ -1315,8 +1199,6 @@ export const Scene: React.FC<SceneProps> = ({
           onSelect={onPlanetSelect}
         />
       ))}
-
-      {/* {showAxis && <primitive object={axisHelper} />} */}
 
       <OrbitControls enablePan={true} minDistance={8} maxDistance={100} />
     </>

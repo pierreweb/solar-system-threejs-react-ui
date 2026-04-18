@@ -1,5 +1,4 @@
-// Transition note: this config currently mixes legacy visual simulation values
-// (`distance`, `radius`) with reference astronomy values for a later migration.
+//config/simulationBodyConfig.js
 export const simulationBodyConfigs = [
   {
     name: "Sun",
@@ -10,7 +9,7 @@ export const simulationBodyConfigs = [
     physicalRadiusKm: 696340,
 
     distance: 0,
-    //radius: 12.1875,
+
     rotationSpeed: 0.12,
 
     dayHours: 609.12,
@@ -26,8 +25,7 @@ export const simulationBodyConfigs = [
     name: "Mercury",
     kind: "planet",
     visualRole: "planet",
-    // radius: 1.7,
-    // distance: 16,
+
     physicalRadiusKm: 2439.7,
     orbitalDistanceAu: 0.387,
     yearDays: 88,
@@ -44,8 +42,7 @@ export const simulationBodyConfigs = [
     name: "Venus",
     kind: "planet",
     visualRole: "planet",
-    // radius: 2.5,
-    // distance: 22,
+
     physicalRadiusKm: 6051.8,
     orbitalDistanceAu: 0.723,
     yearDays: 224.7,
@@ -63,8 +60,7 @@ export const simulationBodyConfigs = [
     name: "Earth",
     kind: "planet",
     visualRole: "planet",
-    // radius: 2.65,
-    //distance: 30,
+
     physicalRadiusKm: 6371.0,
     orbitalDistanceAu: 1.0,
     yearDays: 365.25,
@@ -82,9 +78,7 @@ export const simulationBodyConfigs = [
     kind: "satellite",
     parentName: "Earth",
     visualRole: "moon",
-    // Transitional visual values preserved to keep current Moon appearance.
-    //radius: 0.7155,
-    // distance: 7.232941176470588,
+
     physicalRadiusKm: 1737.4,
     parentOrbitDistanceKm: 384400,
     yearDays: 27.32,
@@ -101,8 +95,7 @@ export const simulationBodyConfigs = [
     name: "Mars",
     kind: "planet",
     visualRole: "planet",
-    //radius: 2.0,
-    //distance: 40,
+
     physicalRadiusKm: 3389.5,
     orbitalDistanceAu: 1.524,
     yearDays: 687,
@@ -139,8 +132,7 @@ export const simulationBodyConfigs = [
     name: "Ceres",
     kind: "dwarf",
     visualRole: "dwarf",
-    // radius: 0.75,
-    // distance: 52,
+
     physicalRadiusKm: 473,
     orbitalDistanceAu: 2.77,
     yearDays: 1680,
@@ -157,8 +149,7 @@ export const simulationBodyConfigs = [
     name: "Jupiter",
     kind: "planet",
     visualRole: "planet",
-    // radius: 8.5,
-    // distance: 62,
+
     physicalRadiusKm: 69911,
     orbitalDistanceAu: 5.203,
     yearDays: 4331,
@@ -175,8 +166,7 @@ export const simulationBodyConfigs = [
     name: "Saturn",
     kind: "planet",
     visualRole: "planet",
-    //radius: 7.2,
-    //distance: 88,
+
     physicalRadiusKm: 58232,
     orbitalDistanceAu: 9.537,
     rings: {
@@ -200,8 +190,7 @@ export const simulationBodyConfigs = [
     name: "Uranus",
     kind: "planet",
     visualRole: "planet",
-    // radius: 5.0,
-    //distance: 114,
+
     physicalRadiusKm: 25362,
     orbitalDistanceAu: 19.191,
     yearDays: 30589,
@@ -218,8 +207,7 @@ export const simulationBodyConfigs = [
     name: "Neptune",
     kind: "planet",
     visualRole: "planet",
-    //radius: 4.9,
-    // distance: 140,
+
     physicalRadiusKm: 24622,
     orbitalDistanceAu: 30.07,
     yearDays: 59800,
@@ -236,8 +224,7 @@ export const simulationBodyConfigs = [
     name: "Pluto",
     kind: "dwarf",
     visualRole: "dwarf",
-    // radius: 0.95,
-    //distance: 165,
+
     physicalRadiusKm: 1188.3,
     orbitalDistanceAu: 39.48,
     yearDays: 90560,

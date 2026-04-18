@@ -1,6 +1,3 @@
-/* import { getOrbitSpeed, getScaledDistance } from "./sceneObjectUtils.js";
-import { getSimulationBeltVisuals } from "./simulationVisuals.js";
- */
 import { getOrbitSpeed } from "./sceneObjectUtils.js";
 import { getSimulationBeltVisuals } from "./simulationVisuals.js";
 
@@ -76,7 +73,9 @@ export function createBeltDescriptor(obj) {
   const asteroidScaleMax =
     typeof obj.asteroidScaleMax === "number" ? obj.asteroidScaleMax : 0.11;
   const verticalSpreadFactor =
-    typeof obj.verticalSpreadFactor === "number" ? obj.verticalSpreadFactor : 0.22;
+    typeof obj.verticalSpreadFactor === "number"
+      ? obj.verticalSpreadFactor
+      : 0.22;
   const radialJitter =
     typeof obj.radialJitter === "number" ? obj.radialJitter : 0.12;
   const geometryRadius =

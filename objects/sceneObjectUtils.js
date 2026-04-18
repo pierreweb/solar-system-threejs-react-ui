@@ -1,3 +1,4 @@
+//objects/sceneObjectUtils.js
 import * as THREE from "three";
 import { getPlanetInfo } from "../data/planetInfodata.js";
 
@@ -36,10 +37,7 @@ export function resolveAssetUrl(assetPath) {
     return normalizedSlashes;
   }
 
-  const withoutRelativePrefix = normalizedSlashes.replace(
-    /^(?:\.\.?\/)+/,
-    "",
-  );
+  const withoutRelativePrefix = normalizedSlashes.replace(/^(?:\.\.?\/)+/, "");
 
   const withoutLeadingSlash = withoutRelativePrefix.replace(/^\/+/, "");
   return `${normalizedBaseUrl}${withoutLeadingSlash}`;
