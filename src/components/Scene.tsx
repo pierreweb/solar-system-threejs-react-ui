@@ -272,18 +272,22 @@ function getAxisHelperSize(
 
 function getLabelOffsetY(
   radiusScaled: number,
-  kind: "sun" | "planet" | "moon" = "planet",
+  kind: "sun" | "planet" | "dwarf" | "moon" = "planet",
 ) {
   switch (kind) {
     case "sun":
-      return radiusScaled + 1.0; // Math.max(radiusScaled * 0.5, 1.2);
+      //return radiusScaled + 1.0; // Math.max(radiusScaled * 0.5, 1.2);
+      return Math.max(radiusScaled + Math.log(0.6 * radiusScaled), 0.6);
 
     case "moon":
-      return radiusScaled * 1.9; // Math.max(radiusScaled * 0.35, 0.25);
+      return Math.max(radiusScaled + Math.log(1 + radiusScaled), 0.6);
+
+    case "dwarf":
+      return Math.max(1.0 + radiusScaled * 1.9, 5.0);
 
     case "planet":
     default:
-      return radiusScaled * 2.0; //Math.max(radiusScaled * 1.3, 0.35);
+      return Math.max(radiusScaled + Math.log(1 + radiusScaled), 0.6);
   }
 }
 

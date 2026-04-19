@@ -1,3 +1,4 @@
+//src/App.tsx
 import React, { useState, useEffect } from "react";
 import { Canvas } from "@react-three/fiber";
 import { motion, AnimatePresence } from "motion/react";
@@ -1104,7 +1105,7 @@ export default function App() {
               <input
                 type="range"
                 min="0.1"
-                max="5"
+                max="4"
                 step="0.1"
                 value={animationSpeed}
                 onChange={(e) => setAnimationSpeed(parseFloat(e.target.value))}
